@@ -1,26 +1,48 @@
 cluster:
-  zookeeper:
-    hostPort: localhost:2181
-    sessionTimeout: 100000
-#  redis:
-#    host: localhost
-#    port: 6379
+  standalone:
+    url: jdbc:h2:~/memorydb
+    user_name: sa
+cache:
+  guava:
 queue:
-  disruptor: on
-  data_carrier: off
-agentstream:
-  grpc:
-    host: localhost
-    port: 1000
+  disruptor:
+naming:
   jetty:
     host: localhost
-    port: 2000
+    port: 10800
     context_path: /
-discovery:
-  grpc: localhost
-  port: 1000
+remote:
+  gRPC:
+    host: localhost
+    port: 11800
+agent_gRPC:
+  gRPC:
+    host: localhost
+    port: 11800
+agent_jetty:
+  jetty:
+    host: localhost
+    port: 12800
+    context_path: /
+agent_stream:
+  default:
+    buffer_file_path: ../buffer/
+    buffer_offset_max_file_size: 10M
+    buffer_segment_max_file_size: 500M
+configuration:
+  default:
+alerting:
+  default:
 ui:
   jetty:
     host: localhost
     port: 12800
-
+    context_path: /
+jetty_manager:
+  jetty:
+gRPC_manager:
+  gRPC:
+storage:
+  h2:
+    url: jdbc:h2:~/memorydb
+    user_name: sa

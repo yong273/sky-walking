@@ -4,11 +4,9 @@ services:
   - docker
 
 language: java
-
-script:
+install:
   - jdk_switcher use oraclejdk8
-  - mvn clean install
+  - mvn clean install --quiet jacoco:report coveralls:report
 
 after_success:
-  - mvn clean test jacoco:report coveralls:report
   - bash ./travis/push_image.sh

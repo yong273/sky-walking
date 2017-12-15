@@ -1,43 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.skywalking</groupId>
+    <groupId>org.apache.skywalking</groupId>
     <artifactId>apm</artifactId>
-    <version>3.2.1-2017</version>
-
-    <licenses>
-        <license>
-            <name>GNU GENERAL PUBLIC LICENSE V3</name>
-            <url>https://github.com/wu-sheng/sky-walking/blob/master/LICENSE</url>
-        </license>
-    </licenses>
+    <version>5.0-2018-preview</version>
 
     <developers>
         <developer>
             <name>Wu Sheng</name>
             <email>wu.sheng@foxmail.com</email>
-            <url>https://wu-sheng.github.io/me/</url>
+            <url>https://github.com/wu-sheng</url>
+            <roles>
+                <role>Founder</role>
+                <role>PMC member</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Peng Yongsheng</name>
+            <url>https://github.com/peng-yongsheng</url>
+            <roles>
+                <role>PMC member</role>
+            </roles>
         </developer>
         <developer>
             <name>Zhang Xin</name>
             <url>https://github.com/ascrutae</url>
-        </developer>
-        <developer>
-            <name>Tan Zhen</name>
-            <url>https://github.com/mircoteam</url>
-        </developer>
-        <developer>
-            <name>Xu Yan</name>
-            <url>https://github.com/TastySummer</url>
-        </developer>
-        <developer>
-            <name>Peng Yongsheng</name>
-            <url>https://github.com/pengys5</url>
-        </developer>
-        <developer>
-            <name>Dai Wen</name>
+            <roles>
+                <role>PMC member</role>
+            </roles>
         </developer>
     </developers>
 
@@ -45,17 +55,17 @@
         <module>apm-commons</module>
         <module>apm-sniffer</module>
         <module>apm-application-toolkit</module>
-        <module>apm-collector</module>
         <module>apm-network</module>
+        <module>apm-collector</module>
     </modules>
     <packaging>pom</packaging>
 
     <name>apm</name>
-    <url>https://github.com/wu-sheng/sky-walking</url>
+    <url>https://github.com/apache/incubator-skywalking</url>
 
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/wu-sheng/sky-walking/issues</url>
+        <url>https://github.com/apache/incubator-skywalking/issues</url>
     </issueManagement>
 
     <ciManagement>
@@ -69,6 +79,7 @@
         <scala.compiler.version>2.11.7</scala.compiler.version>
         <powermock.version>1.6.4</powermock.version>
         <docker.plugin.version>0.4.13</docker.plugin.version>
+        <checkstyle.header.file>CHECKSTYLE_HEAD</checkstyle.header.file>
     </properties>
 
     <dependencies>
@@ -241,6 +252,7 @@
                 <executions>
                     <execution>
                         <id>attach-sources</id>
+                        <phase>none</phase>
                         <goals>
                             <goal>jar</goal>
                         </goals>
@@ -258,7 +270,7 @@
                 <artifactId>coveralls-maven-plugin</artifactId>
                 <version>4.1.0</version>
                 <configuration>
-                    <repoToken>GGTAeHsfVql3x1BmTFaJvxC27f5sfcZNg</repoToken>
+                    <repoToken>xFwR2GqmxcMxV7tGEpW2NfwIrbCD4cQCS</repoToken>
                     <sourceDirectories>
                         <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
                     </sourceDirectories>
@@ -297,10 +309,11 @@
                             <configLocation>checkStyle.xml</configLocation>
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
                             <failsOnError>true</failsOnError>
-                            <excludes>org/skywalking/apm/network/**/*.java,
-                                org/skywalking/apm/collector/remote/grpc/**/*.java,
-                                org/skywalking/apm/agent/core/context/ids/base64/*.java
+                            <excludes>org.apache.skywalking.apm/network/**/*.java,
+                                org.apache.skywalking.apm/collector/remote/grpc/**/*.java,
+                                org.apache.skywalking.apm/agent/core/context/ids/base64/*.java
                             </excludes>
                         </configuration>
                         <goals>
