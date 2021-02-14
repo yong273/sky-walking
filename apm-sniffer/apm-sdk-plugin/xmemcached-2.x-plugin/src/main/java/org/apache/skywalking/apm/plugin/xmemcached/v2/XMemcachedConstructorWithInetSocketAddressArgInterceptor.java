@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.xmemcached.v2;
 
 import java.net.InetSocketAddress;
@@ -24,18 +23,11 @@ import java.net.InetSocketAddress;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.EnhancedInstance;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.InstanceConstructorInterceptor;
 
-/**
- * {@link XMemcachedConstructorWithInetSocketAddressArgInterceptor} intercept constructor of 
- * {@link XMemcachedClient(final InetSocketAddress inetSocketAddress)} or 
- * {@link XMemcachedClient(final InetSocketAddress inetSocketAddress, int weight)}.
- * 
- * @author IluckySi
- */
 public class XMemcachedConstructorWithInetSocketAddressArgInterceptor implements InstanceConstructorInterceptor {
 
     @Override
     public void onConstruct(EnhancedInstance objInst, Object[] allArguments) {
-        InetSocketAddress inetSocketAddress = (InetSocketAddress)allArguments[0];
+        InetSocketAddress inetSocketAddress = (InetSocketAddress) allArguments[0];
         String host = inetSocketAddress.getAddress().getHostAddress();
         int port = inetSocketAddress.getPort();
         objInst.setSkyWalkingDynamicField(host + ":" + port);

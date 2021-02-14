@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.rocketMQ.v4;
 
 import java.util.List;
@@ -89,7 +88,7 @@ public class OnSuccessInterceptorTest {
 
         AbstractTracingSpan successSpan = spans.get(0);
 
-        SpanAssert.assertComponent(successSpan, ComponentsDefine.ROCKET_MQ);
+        SpanAssert.assertComponent(successSpan, ComponentsDefine.ROCKET_MQ_PRODUCER);
 
     }
 
@@ -106,7 +105,7 @@ public class OnSuccessInterceptorTest {
 
         AbstractTracingSpan successSpan = spans.get(0);
 
-        SpanAssert.assertComponent(successSpan, ComponentsDefine.ROCKET_MQ);
+        SpanAssert.assertComponent(successSpan, ComponentsDefine.ROCKET_MQ_PRODUCER);
         SpanAssert.assertOccurException(successSpan, true);
 
     }

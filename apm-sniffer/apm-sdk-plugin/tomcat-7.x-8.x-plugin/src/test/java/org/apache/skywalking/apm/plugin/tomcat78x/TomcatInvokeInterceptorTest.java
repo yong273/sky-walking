@@ -16,13 +16,13 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.tomcat78x;
 
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.skywalking.apm.agent.core.context.SW3CarrierItem;
+
+import org.apache.catalina.connector.Request;
+import org.apache.skywalking.apm.agent.core.context.SW8CarrierItem;
 import org.apache.skywalking.apm.agent.core.context.trace.AbstractTracingSpan;
 import org.apache.skywalking.apm.agent.core.context.trace.SpanLayer;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.EnhancedInstance;
@@ -65,7 +65,7 @@ public class TomcatInvokeInterceptorTest {
     public AgentServiceRule serviceRule = new AgentServiceRule();
 
     @Mock
-    private HttpServletRequest request;
+    private Request request;
     @Mock
     private HttpServletResponse response;
     @Mock
@@ -87,11 +87,25 @@ public class TomcatInvokeInterceptorTest {
         when(request.getRequestURI()).thenReturn("/test/testRequestURL");
         when(request.getRequestURL()).thenReturn(new StringBuffer("http://localhost:8080/test/testRequestURL"));
         when(response.getStatus()).thenReturn(200);
-        arguments = new Object[] {request, response};
-        argumentType = new Class[] {request.getClass(), response.getClass()};
+        arguments = new Object[] {
+            request,
+            response
+        };
+        argumentType = new Class[] {
+            request.getClass(),
+            response.getClass()
+        };
 
-        exceptionArguments = new Object[] {request, response, new RuntimeException()};
-        exceptionArgumentType = new Class[] {request.getClass(), response.getClass(), new RuntimeException().getClass()};
+        exceptionArguments = new Object[] {
+            request,
+            response,
+            new RuntimeException()
+        };
+        exceptionArgumentType = new Class[] {
+            request.getClass(),
+            response.getClass(),
+            new RuntimeException().getClass()
+        };
     }
 
     @Test
@@ -107,7 +121,8 @@ public class TomcatInvokeInterceptorTest {
 
     @Test
     public void testWithSerializedContextData() throws Throwable {
-        when(request.getHeader(SW3CarrierItem.HEADER_NAME)).thenReturn("1.234.111|3|1|1|#192.168.1.8:18002|#/portal/|#/testEntrySpan|#AQA*#AQA*Et0We0tQNQA*");
+        when(request.getHeader(
+            SW8CarrierItem.HEADER_NAME)).thenReturn("1-My40LjU=-MS4yLjM=-3-c2VydmljZQ==-aW5zdGFuY2U=-L2FwcA==-MTI3LjAuMC4xOjgwODA=");
 
         tomcatInvokeInterceptor.beforeMethod(enhancedInstance, null, arguments, argumentType, methodInterceptResult);
         tomcatInvokeInterceptor.afterMethod(enhancedInstance, null, arguments, argumentType, null);
@@ -153,9 +168,9 @@ public class TomcatInvokeInterceptorTest {
     }
 
     private void assertTraceSegmentRef(TraceSegmentRef ref) {
-        assertThat(SegmentRefHelper.getEntryApplicationInstanceId(ref), is(1));
+        assertThat(SegmentRefHelper.getParentServiceInstance(ref), is("instance"));
         assertThat(SegmentRefHelper.getSpanId(ref), is(3));
-        assertThat(SegmentRefHelper.getTraceSegmentId(ref).toString(), is("1.234.111"));
+        assertThat(SegmentRefHelper.getTraceSegmentId(ref).toString(), is("3.4.5"));
     }
 
     private void assertHttpSpan(AbstractTracingSpan span) {

@@ -16,22 +16,20 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.core.context.trace;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.skywalking.apm.agent.core.context.util.KeyValuePair;
-import org.apache.skywalking.apm.network.proto.LogMessage;
+import org.apache.skywalking.apm.network.language.agent.v3.Log;
 
 /**
- * The <code>LogDataEntity</code> represents a collection of {@link KeyValuePair},
- * contains several fields of a logging operation.
- *
- * @author wusheng
+ * The <code>LogDataEntity</code> represents a collection of {@link KeyValuePair}, contains several fields of a logging
+ * operation.
  */
 public class LogDataEntity {
-    private long timestamp = 0;
+    private long timestamp;
     private List<KeyValuePair> logs;
 
     private LogDataEntity(long timestamp, List<KeyValuePair> logs) {
@@ -47,13 +45,11 @@ public class LogDataEntity {
         protected List<KeyValuePair> logs;
 
         public Builder() {
-            logs = new LinkedList<KeyValuePair>();
+            logs = new LinkedList<>();
         }
 
         public Builder add(KeyValuePair... fields) {
-            for (KeyValuePair field : fields) {
-                logs.add(field);
-            }
+            Collections.addAll(logs, fields);
             return this;
         }
 
@@ -62,8 +58,8 @@ public class LogDataEntity {
         }
     }
 
-    public LogMessage transform() {
-        LogMessage.Builder logMessageBuilder = LogMessage.newBuilder();
+    public Log transform() {
+        Log.Builder logMessageBuilder = Log.newBuilder();
         for (KeyValuePair log : logs) {
             logMessageBuilder.addData(log.transform());
         }

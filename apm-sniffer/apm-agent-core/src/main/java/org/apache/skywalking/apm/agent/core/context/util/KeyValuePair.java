@@ -16,15 +16,12 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.core.context.util;
 
-import org.apache.skywalking.apm.network.proto.KeyWithStringValue;
+import org.apache.skywalking.apm.network.common.v3.KeyStringValuePair;
 
 /**
  * The <code>KeyValuePair</code> represents a object which contains a string key and a string value.
- *
- * @author wusheng
  */
 public class KeyValuePair {
     private String key;
@@ -43,8 +40,8 @@ public class KeyValuePair {
         return value;
     }
 
-    public KeyWithStringValue transform() {
-        KeyWithStringValue.Builder keyValueBuilder = KeyWithStringValue.newBuilder();
+    public KeyStringValuePair transform() {
+        KeyStringValuePair.Builder keyValueBuilder = KeyStringValuePair.newBuilder();
         keyValueBuilder.setKey(key);
         if (value != null) {
             keyValueBuilder.setValue(value);

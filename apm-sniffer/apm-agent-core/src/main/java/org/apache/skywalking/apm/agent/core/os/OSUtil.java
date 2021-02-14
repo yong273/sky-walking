@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.core.os;
 
 import java.lang.management.ManagementFactory;
@@ -25,14 +24,12 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
-import org.apache.skywalking.apm.network.proto.OSInfo;
+import org.apache.skywalking.apm.network.common.v3.KeyStringValuePair;
 
-/**
- * @author wusheng
- */
 public class OSUtil {
     private static volatile String OS_NAME;
     private static volatile String HOST_NAME;
@@ -60,7 +57,7 @@ public class OSUtil {
 
     public static List<String> getAllIPV4() {
         if (IPV4_LIST == null) {
-            IPV4_LIST = new LinkedList<String>();
+            IPV4_LIST = new LinkedList<>();
             try {
                 Enumeration<NetworkInterface> interfs = NetworkInterface.getNetworkInterfaces();
                 while (interfs.hasMoreElements()) {
@@ -71,6 +68,8 @@ public class OSUtil {
                         if (address instanceof Inet4Address) {
                             String addressStr = address.getHostAddress();
                             if ("127.0.0.1".equals(addressStr)) {
+                                continue;
+                            } else if ("localhost".equals(addressStr)) {
                                 continue;
                             }
                             IPV4_LIST.add(addressStr);
@@ -84,6 +83,15 @@ public class OSUtil {
         return IPV4_LIST;
     }
 
+    public static String getIPV4() {
+        final List<String> allIPV4 = getAllIPV4();
+        if (allIPV4.size() > 0) {
+            return allIPV4.get(0);
+        } else {
+            return "no-hostname";
+        }
+    }
+
     public static int getProcessNo() {
         if (PROCESS_NO == 0) {
             try {
@@ -95,21 +103,28 @@ public class OSUtil {
         return PROCESS_NO;
     }
 
-    public static OSInfo buildOSInfo() {
-        OSInfo.Builder builder = OSInfo.newBuilder();
+    public static List<KeyStringValuePair> buildOSInfo(int ipv4Size) {
+        List<KeyStringValuePair> osInfo = new ArrayList<>();
+
         String osName = getOsName();
         if (osName != null) {
-            builder.setOsName(osName);
+            osInfo.add(KeyStringValuePair.newBuilder().setKey("OS Name").setValue(osName).build());
         }
         String hostName = getHostName();
         if (hostName != null) {
-            builder.setHostname(hostName);
+            osInfo.add(KeyStringValuePair.newBuilder().setKey("hostname").setValue(hostName).build());
         }
         List<String> allIPV4 = getAllIPV4();
         if (allIPV4.size() > 0) {
-            builder.addAllIpv4S(allIPV4);
+            if (allIPV4.size() > ipv4Size) {
+                allIPV4 = allIPV4.subList(0, ipv4Size);
+            }
+            for (String ipv4 : allIPV4) {
+                osInfo.add(KeyStringValuePair.newBuilder().setKey("ipv4").setValue(ipv4).build());
+            }
         }
-        builder.setProcessNo(getProcessNo());
-        return builder.build();
+        osInfo.add(KeyStringValuePair.newBuilder().setKey("Process No.").setValue(getProcessNo() + "").build());
+        osInfo.add(KeyStringValuePair.newBuilder().setKey("language").setValue("java").build());
+        return osInfo;
     }
 }

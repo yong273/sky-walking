@@ -16,106 +16,48 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.core.context;
 
-import java.util.List;
-import org.apache.skywalking.apm.agent.core.context.ids.ID;
+import lombok.Getter;
 import org.apache.skywalking.apm.agent.core.context.ids.DistributedTraceId;
-import org.apache.skywalking.apm.agent.core.dictionary.DictionaryUtil;
-import org.apache.skywalking.apm.util.StringUtil;
 
 /**
  * The <code>ContextSnapshot</code> is a snapshot for current context. The snapshot carries the info for building
  * reference between two segments in two thread, but have a causal relationship.
- *
- * @author wusheng
  */
+@Getter
 public class ContextSnapshot {
-    /**
-     * trace segment id of the parent trace segment.
-     */
-    private ID traceSegmentId;
+    private DistributedTraceId traceId;
+    private String traceSegmentId;
+    private int spanId;
+    private String parentEndpoint;
 
-    /**
-     * span id of the parent span, in parent trace segment.
-     */
-    private int spanId = -1;
+    private CorrelationContext correlationContext;
+    private ExtensionContext extensionContext;
 
-    private String entryOperationName;
-
-    private String parentOperationName;
-
-    /**
-     * {@link DistributedTraceId}
-     */
-    private DistributedTraceId primaryDistributedTraceId;
-
-    private int entryApplicationInstanceId = DictionaryUtil.nullValue();
-
-    ContextSnapshot(ID traceSegmentId, int spanId,
-        List<DistributedTraceId> distributedTraceIds) {
+    ContextSnapshot(String traceSegmentId,
+                    int spanId,
+                    DistributedTraceId primaryTraceId,
+                    String parentEndpoint,
+                    CorrelationContext correlationContext,
+                    ExtensionContext extensionContext) {
         this.traceSegmentId = traceSegmentId;
         this.spanId = spanId;
-        if (distributedTraceIds != null) {
-            this.primaryDistributedTraceId = distributedTraceIds.get(0);
-        }
+        this.traceId = primaryTraceId;
+        this.parentEndpoint = parentEndpoint;
+        this.correlationContext = correlationContext.clone();
+        this.extensionContext = extensionContext.clone();
     }
 
-    public void setEntryOperationName(String entryOperationName) {
-        this.entryOperationName = "#" + entryOperationName;
+    public boolean isFromCurrent() {
+        return traceSegmentId != null && traceSegmentId.equals(ContextManager.capture().getTraceSegmentId());
     }
 
-    public void setEntryOperationId(int entryOperationId) {
-        this.entryOperationName = entryOperationId + "";
-    }
-
-    public void setParentOperationName(String parentOperationName) {
-        this.parentOperationName = "#" + parentOperationName;
-    }
-
-    public void setParentOperationId(int parentOperationId) {
-        this.parentOperationName = parentOperationId + "";
-    }
-
-    public DistributedTraceId getDistributedTraceId() {
-        return primaryDistributedTraceId;
-    }
-
-    public ID getTraceSegmentId() {
-        return traceSegmentId;
-    }
-
-    public int getSpanId() {
-        return spanId;
-    }
-
-    public String getParentOperationName() {
-        return parentOperationName;
+    public CorrelationContext getCorrelationContext() {
+        return correlationContext;
     }
 
     public boolean isValid() {
-        return traceSegmentId != null
-            && spanId > -1
-            && entryApplicationInstanceId != DictionaryUtil.nullValue()
-            && primaryDistributedTraceId != null
-            && !StringUtil.isEmpty(entryOperationName)
-            && !StringUtil.isEmpty(parentOperationName);
-    }
-
-    public String getEntryOperationName() {
-        return entryOperationName;
-    }
-
-    public void setEntryApplicationInstanceId(int entryApplicationInstanceId) {
-        this.entryApplicationInstanceId = entryApplicationInstanceId;
-    }
-
-    public int getEntryApplicationInstanceId() {
-        return entryApplicationInstanceId;
-    }
-    
-    public boolean isFromCurrent() {
-        return traceSegmentId.equals(ContextManager.capture().getTraceSegmentId());
+        return traceSegmentId != null && spanId > -1 && traceId != null;
     }
 }

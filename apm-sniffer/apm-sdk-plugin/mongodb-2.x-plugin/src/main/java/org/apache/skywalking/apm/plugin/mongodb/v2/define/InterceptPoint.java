@@ -16,16 +16,12 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.mongodb.v2.define;
 
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.InstanceMethodsInterceptPoint;
 
-/**
- * @auther liyuntao
- */
 public abstract class InterceptPoint implements InstanceMethodsInterceptPoint {
-    private static final String MONGDB_METHOD_INTERCET_CLASS = "MongoDBCollectionMethodInterceptor";
+    private static final String MONGDB_METHOD_INTERCET_CLASS = "org.apache.skywalking.apm.plugin.mongodb.v2.MongoDBCollectionMethodInterceptor";
 
     @Override
     public String getMethodsInterceptor() {

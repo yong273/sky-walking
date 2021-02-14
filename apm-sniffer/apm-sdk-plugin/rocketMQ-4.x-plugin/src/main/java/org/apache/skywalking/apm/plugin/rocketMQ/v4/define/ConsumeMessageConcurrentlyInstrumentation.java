@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.rocketMQ.v4.define;
 
 import net.bytebuddy.description.method.MethodDescription;
@@ -29,41 +28,40 @@ import org.apache.skywalking.apm.agent.core.plugin.match.HierarchyMatch;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 
-/**
- * {@link ConsumeMessageConcurrentlyInstrumentation} intercepts the {@link org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently#consumeMessage(java.util.List,
- * org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext)} method by using {@link
- * org.apache.skywalking.apm.plugin.rocketMQ.v4.MessageConcurrentlyConsumeInterceptor}.
- *
- * @author zhang xin
- */
 public class ConsumeMessageConcurrentlyInstrumentation extends ClassInstanceMethodsEnhancePluginDefine {
     private static final String ENHANCE_CLASS = "org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently";
     private static final String CONSUMER_MESSAGE_METHOD = "consumeMessage";
     private static final String INTERCEPTOR_CLASS = "org.apache.skywalking.apm.plugin.rocketMQ.v4.MessageConcurrentlyConsumeInterceptor";
 
-    @Override protected ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
+    @Override
+    public ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
         return new ConstructorInterceptPoint[0];
     }
 
-    @Override protected InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
+    @Override
+    public InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
         return new InstanceMethodsInterceptPoint[] {
             new InstanceMethodsInterceptPoint() {
-                @Override public ElementMatcher<MethodDescription> getMethodsMatcher() {
+                @Override
+                public ElementMatcher<MethodDescription> getMethodsMatcher() {
                     return named(CONSUMER_MESSAGE_METHOD);
                 }
 
-                @Override public String getMethodsInterceptor() {
+                @Override
+                public String getMethodsInterceptor() {
                     return INTERCEPTOR_CLASS;
                 }
 
-                @Override public boolean isOverrideArgs() {
+                @Override
+                public boolean isOverrideArgs() {
                     return false;
                 }
             }
         };
     }
 
-    @Override protected ClassMatch enhanceClass() {
+    @Override
+    protected ClassMatch enhanceClass() {
         return HierarchyMatch.byHierarchyMatch(new String[] {ENHANCE_CLASS});
     }
 }

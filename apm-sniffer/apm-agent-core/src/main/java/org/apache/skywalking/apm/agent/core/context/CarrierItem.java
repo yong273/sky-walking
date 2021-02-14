@@ -16,27 +16,28 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.core.context;
 
 import java.util.Iterator;
+import org.apache.skywalking.apm.util.StringUtil;
 
-/**
- * @author wusheng
- */
+import static org.apache.skywalking.apm.agent.core.conf.Config.Agent.NAMESPACE;
+
 public class CarrierItem implements Iterator<CarrierItem> {
     private String headKey;
     private String headValue;
     private CarrierItem next;
 
     public CarrierItem(String headKey, String headValue) {
-        this.headKey = headKey;
-        this.headValue = headValue;
-        next = null;
+        this(headKey, headValue, null);
     }
 
     public CarrierItem(String headKey, String headValue, CarrierItem next) {
-        this.headKey = headKey;
+        if (StringUtil.isEmpty(NAMESPACE)) {
+            this.headKey = headKey;
+        } else {
+            this.headKey = NAMESPACE + "-" + headKey;
+        }
         this.headValue = headValue;
         this.next = next;
     }

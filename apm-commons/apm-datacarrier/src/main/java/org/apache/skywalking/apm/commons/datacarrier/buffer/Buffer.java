@@ -16,16 +16,15 @@
  *
  */
 
-
 package org.apache.skywalking.apm.commons.datacarrier.buffer;
 
-import java.util.LinkedList;
+import java.util.List;
 import org.apache.skywalking.apm.commons.datacarrier.common.AtomicRangeInteger;
 
 /**
- * Created by wusheng on 2016/10/25.
+ * Self implementation ring queue.
  */
-public class Buffer<T> {
+public class Buffer<T> implements QueueBuffer<T> {
     private final Object[] buffer;
     private BufferStrategy strategy;
     private AtomicRangeInteger index;
@@ -36,25 +35,18 @@ public class Buffer<T> {
         index = new AtomicRangeInteger(0, bufferSize);
     }
 
-    void setStrategy(BufferStrategy strategy) {
+    @Override
+    public void setStrategy(BufferStrategy strategy) {
         this.strategy = strategy;
     }
 
-    boolean save(T data) {
+    @Override
+    public boolean save(T data) {
         int i = index.getAndIncrement();
         if (buffer[i] != null) {
             switch (strategy) {
-                case BLOCKING:
-                    while (buffer[i] != null) {
-                        try {
-                            Thread.sleep(1L);
-                        } catch (InterruptedException e) {
-                        }
-                    }
-                    break;
                 case IF_POSSIBLE:
                     return false;
-                case OVERRIDE:
                 default:
             }
         }
@@ -62,19 +54,23 @@ public class Buffer<T> {
         return true;
     }
 
+    @Override
     public int getBufferSize() {
         return buffer.length;
     }
 
-    public LinkedList<T> obtain(int start, int end) {
-        LinkedList<T> result = new LinkedList<T>();
+    @Override
+    public void obtain(List<T> consumeList) {
+        this.obtain(consumeList, 0, buffer.length);
+    }
+
+    void obtain(List<T> consumeList, int start, int end) {
         for (int i = start; i < end; i++) {
             if (buffer[i] != null) {
-                result.add((T)buffer[i]);
+                consumeList.add((T) buffer[i]);
                 buffer[i] = null;
             }
         }
-        return result;
     }
 
 }

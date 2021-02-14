@@ -16,14 +16,10 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.httpClient.v4.define;
 
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.matcher.ElementMatcher;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
-import org.apache.http.protocol.HttpContext;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.InstanceMethodsInterceptPoint;
 import org.apache.skywalking.apm.agent.core.plugin.match.NameMatch;
 import org.apache.skywalking.apm.agent.core.plugin.match.ClassMatch;
@@ -31,11 +27,8 @@ import org.apache.skywalking.apm.agent.core.plugin.match.ClassMatch;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 
 /**
- * {@link AbstractHttpClientInstrumentation} presents that skywalking
- * intercepts {@link org.apache.http.impl.client.MinimalHttpClient#doExecute(HttpHost, HttpRequest, HttpContext)}
- * by using {@link HttpClientInstrumentation#INTERCEPT_CLASS}.
- *
- * @author zhangxin
+ * {@link AbstractHttpClientInstrumentation} presents that skywalking intercepts MinimalHttpClient#doExecute by using
+ * {@link HttpClientInstrumentation#INTERCEPT_CLASS}.
  */
 public class MinimalHttpClientInstrumentation extends HttpClientInstrumentation {
 
@@ -47,7 +40,7 @@ public class MinimalHttpClientInstrumentation extends HttpClientInstrumentation 
     }
 
     @Override
-    protected InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
+    public InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
         return new InstanceMethodsInterceptPoint[] {
             new InstanceMethodsInterceptPoint() {
                 @Override

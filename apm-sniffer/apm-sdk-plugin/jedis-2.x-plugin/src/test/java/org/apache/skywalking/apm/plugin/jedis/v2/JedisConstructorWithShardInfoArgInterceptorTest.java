@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.jedis.v2;
 
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.EnhancedInstance;
@@ -28,7 +27,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import redis.clients.jedis.JedisShardInfo;
 
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -51,7 +49,7 @@ public class JedisConstructorWithShardInfoArgInterceptorTest {
     public void onConstruct() throws Exception {
 
         interceptor.onConstruct(enhancedInstance, new Object[] {new JedisShardInfo("127.0.0.1", 6379)});
-        verify(enhancedInstance, times(1)).setSkyWalkingDynamicField("127.0.0.1:6379");
+        verify(enhancedInstance).setSkyWalkingDynamicField("127.0.0.1:6379");
     }
 
 }

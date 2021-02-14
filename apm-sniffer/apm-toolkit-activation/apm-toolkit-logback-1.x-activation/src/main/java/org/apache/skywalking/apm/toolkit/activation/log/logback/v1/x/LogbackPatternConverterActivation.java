@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.toolkit.activation.log.logback.v1.x;
 
 import net.bytebuddy.description.method.MethodDescription;
@@ -28,30 +27,35 @@ import org.apache.skywalking.apm.agent.core.plugin.interceptor.StaticMethodsInte
 import org.apache.skywalking.apm.agent.core.plugin.match.ClassMatch;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
+import static org.apache.skywalking.apm.agent.core.plugin.bytebuddy.ArgumentTypeNameMatch.takesArgumentWithType;
 import static org.apache.skywalking.apm.agent.core.plugin.match.NameMatch.byName;
 
 /**
- * Active the toolkit class "org.apache.skywalking.apm.toolkit.log.logback.v1.x.LogbackPatternConverter".
- * Should not dependency or import any class in "skywalking-toolkit-logback-1.x" module.
- * Activation's classloader is diff from "org.apache.skywalking.apm.toolkit.log.logback.v1.x.LogbackPatternConverter",
- * using direct will trigger classloader issue.
+ * Active the toolkit class "org.apache.skywalking.apm.toolkit.log.logback.v1.x.LogbackPatternConverter". Should not
+ * dependency or import any class in "skywalking-toolkit-logback-1.x" module. Activation's classloader is diff from
+ * "org.apache.skywalking.apm.toolkit.log.logback.v1.x.LogbackPatternConverter", using direct will trigger classloader
+ * issue.
  * <p>
- * Created by wusheng on 2016/12/7.
  */
 public class LogbackPatternConverterActivation extends ClassInstanceMethodsEnhancePluginDefine {
+
+    public static final String INTERCEPT_CLASS = "org.apache.skywalking.apm.toolkit.activation.log.logback.v1.x.PrintTraceIdInterceptor";
+    public static final String ENHANCE_CLASS = "org.apache.skywalking.apm.toolkit.log.logback.v1.x.LogbackPatternConverter";
+    public static final String ENHANCE_METHOD = "convert";
+
     /**
      * @return the target class, which needs active.
      */
     @Override
     protected ClassMatch enhanceClass() {
-        return byName("org.apache.skywalking.apm.toolkit.log.logback.v1.x.LogbackPatternConverter");
+        return byName(ENHANCE_CLASS);
     }
 
     /**
      * @return null, no need to intercept constructor of enhance class.
      */
     @Override
-    protected ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
+    public ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
         return null;
     }
 
@@ -60,20 +64,21 @@ public class LogbackPatternConverterActivation extends ClassInstanceMethodsEnhan
      * interceptors.
      */
     @Override
-    protected InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
+    public InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
         return new InstanceMethodsInterceptPoint[] {
             new InstanceMethodsInterceptPoint() {
                 @Override
                 public ElementMatcher<MethodDescription> getMethodsMatcher() {
-                    return named("convert");
+                    return named(ENHANCE_METHOD).and(takesArgumentWithType(0, "ch.qos.logback.classic.spi.ILoggingEvent"));
                 }
 
                 @Override
                 public String getMethodsInterceptor() {
-                    return "PrintTraceIdInterceptor";
+                    return INTERCEPT_CLASS;
                 }
 
-                @Override public boolean isOverrideArgs() {
+                @Override
+                public boolean isOverrideArgs() {
                     return false;
                 }
             }

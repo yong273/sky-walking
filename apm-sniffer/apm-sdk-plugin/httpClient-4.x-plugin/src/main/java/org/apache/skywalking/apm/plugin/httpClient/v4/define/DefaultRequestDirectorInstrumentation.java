@@ -16,14 +16,13 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.httpClient.v4.define;
 
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.InstanceMethodsInterceptPoint;
-import org.apache.skywalking.apm.agent.core.plugin.match.NameMatch;
 import org.apache.skywalking.apm.agent.core.plugin.match.ClassMatch;
+import org.apache.skywalking.apm.agent.core.plugin.match.NameMatch;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 
@@ -35,9 +34,7 @@ public class DefaultRequestDirectorInstrumentation extends HttpClientInstrumenta
     private static final String ENHANCE_CLASS = "org.apache.http.impl.client.DefaultRequestDirector";
 
     /**
-     * DefaultRequestDirector is default implement.<br/>
-     * usually use in version 4.0-4.2<br/>
-     * since 4.3, this class is Deprecated.
+     * DefaultRequestDirector is default implement. usually use in version 4.0-4.2 since 4.3, this class is Deprecated.
      */
     @Override
     public ClassMatch enhanceClass() {
@@ -45,7 +42,7 @@ public class DefaultRequestDirectorInstrumentation extends HttpClientInstrumenta
     }
 
     @Override
-    protected InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
+    public InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
         return new InstanceMethodsInterceptPoint[] {
             new InstanceMethodsInterceptPoint() {
                 @Override

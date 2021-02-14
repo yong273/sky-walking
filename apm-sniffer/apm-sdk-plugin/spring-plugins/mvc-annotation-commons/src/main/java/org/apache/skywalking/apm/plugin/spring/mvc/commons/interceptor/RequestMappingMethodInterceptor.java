@@ -16,28 +16,52 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.spring.mvc.commons.interceptor;
 
-import java.lang.reflect.Method;
+import org.apache.skywalking.apm.plugin.spring.mvc.commons.ParsePathUtil;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.lang.reflect.Method;
+
 /**
- * The <code>RequestMappingMethodInterceptor</code> only use the first mapping value.
- * it will inteceptor with <code>@RequestMapping</code>
- *
- * @author clevertension
+ * The <code>RequestMappingMethodInterceptor</code> only use the first mapping value. it will interceptor with
+ * <code>@RequestMapping</code>
  */
-public class RequestMappingMethodInterceptor extends AbstractMethodInteceptor {
+public class RequestMappingMethodInterceptor extends AbstractMethodInterceptor {
     @Override
     public String getRequestURL(Method method) {
-        String requestURL = "";
-        RequestMapping methodRequestMapping = method.getAnnotation(RequestMapping.class);
-        if (methodRequestMapping.value().length > 0) {
-            requestURL = methodRequestMapping.value()[0];
-        } else if (methodRequestMapping.path().length > 0) {
-            requestURL = methodRequestMapping.path()[0];
-        }
-        return requestURL;
+        return ParsePathUtil.recursiveParseMethodAnnotation(method, m -> {
+            String requestURL = null;
+            RequestMapping methodRequestMapping = AnnotationUtils.getAnnotation(m, RequestMapping.class);
+            if (methodRequestMapping != null) {
+                if (methodRequestMapping.value().length > 0) {
+                    requestURL = methodRequestMapping.value()[0];
+                } else if (methodRequestMapping.path().length > 0) {
+                    requestURL = methodRequestMapping.path()[0];
+                }
+            }
+            return requestURL;
+        });
+    }
+
+    @Override
+    public String getAcceptedMethodTypes(Method method) {
+        return ParsePathUtil.recursiveParseMethodAnnotation(method, m -> {
+            RequestMapping methodRequestMapping = AnnotationUtils.getAnnotation(m, RequestMapping.class);
+            if (methodRequestMapping == null || methodRequestMapping.method().length == 0) {
+                return null;
+            }
+            StringBuilder methodTypes = new StringBuilder();
+            methodTypes.append("{");
+            for (int i = 0; i < methodRequestMapping.method().length; i++) {
+                methodTypes.append(methodRequestMapping.method()[i].toString());
+                if (methodRequestMapping.method().length > (i + 1)) {
+                    methodTypes.append(",");
+                }
+            }
+            methodTypes.append("}");
+            return methodTypes.toString();
+        });
     }
 }

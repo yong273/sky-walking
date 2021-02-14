@@ -16,26 +16,18 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.spring.cloud.netflix.feign.v11.define;
 
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.matcher.ElementMatcher;
+import org.apache.skywalking.apm.agent.core.plugin.interceptor.ConstructorInterceptPoint;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.InstanceMethodsInterceptPoint;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.ClassInstanceMethodsEnhancePluginDefine;
-import org.apache.skywalking.apm.agent.core.plugin.interceptor.ConstructorInterceptPoint;
 import org.apache.skywalking.apm.agent.core.plugin.match.ClassMatch;
-import org.apache.skywalking.apm.plugin.feign.http.v9.DefaultHttpClientInterceptor;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static org.apache.skywalking.apm.agent.core.plugin.match.NameMatch.byName;
 
-/**
- * {@link NetflixFeignInstrumentation} presents that skywalking intercepts {@link org.springframework.cloud.netflix.feign.ribbon.LoadBalancerFeignClient#execute(feign.Request,
- * feign.Request.Options)} by using {@link DefaultHttpClientInterceptor}.
- *
- * @author zhangxin
- */
 public class NetflixFeignInstrumentation extends ClassInstanceMethodsEnhancePluginDefine {
     /**
      * Enhance class.
@@ -45,28 +37,34 @@ public class NetflixFeignInstrumentation extends ClassInstanceMethodsEnhancePlug
     /**
      * Intercept class.
      */
-    private static final String INTERCEPT_CLASS = "org.apache.skywalking.apm.plugin.spring.cloud.netflix.feign.v11.DefaultHttpClientInterceptor";
+    private static final String INTERCEPT_CLASS = "org.apache.skywalking.apm.plugin.feign.http.v9.LoadBalancerHttpClientInterceptor";
 
-    @Override protected ClassMatch enhanceClass() {
+    @Override
+    protected ClassMatch enhanceClass() {
         return byName(ENHANCE_CLASS);
     }
 
-    @Override protected ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
+    @Override
+    public ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
         return new ConstructorInterceptPoint[0];
     }
 
-    @Override protected InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
+    @Override
+    public InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
         return new InstanceMethodsInterceptPoint[] {
             new InstanceMethodsInterceptPoint() {
-                @Override public ElementMatcher<MethodDescription> getMethodsMatcher() {
+                @Override
+                public ElementMatcher<MethodDescription> getMethodsMatcher() {
                     return named("execute");
                 }
 
-                @Override public String getMethodsInterceptor() {
+                @Override
+                public String getMethodsInterceptor() {
                     return INTERCEPT_CLASS;
                 }
 
-                @Override public boolean isOverrideArgs() {
+                @Override
+                public boolean isOverrideArgs() {
                     return false;
                 }
             }

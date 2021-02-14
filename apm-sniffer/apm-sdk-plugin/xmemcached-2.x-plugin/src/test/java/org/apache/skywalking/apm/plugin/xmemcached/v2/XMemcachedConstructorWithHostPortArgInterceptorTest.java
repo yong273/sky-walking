@@ -16,10 +16,8 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.xmemcached.v2;
 
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.EnhancedInstance;
@@ -44,8 +42,11 @@ public class XMemcachedConstructorWithHostPortArgInterceptorTest {
 
     @Test
     public void onConstructWithHostPort() {
-        interceptor.onConstruct(enhancedInstance, new Object[]{"127.0.0.1", 11211});
+        interceptor.onConstruct(enhancedInstance, new Object[] {
+            "127.0.0.1",
+            11211
+        });
 
-        verify(enhancedInstance, times(1)).setSkyWalkingDynamicField("127.0.0.1:11211");
+        verify(enhancedInstance).setSkyWalkingDynamicField("127.0.0.1:11211");
     }
 }

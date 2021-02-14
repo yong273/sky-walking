@@ -16,21 +16,19 @@
  *
  */
 
-
 package org.apache.skywalking.apm.toolkit.opentracing;
 
 import io.opentracing.SpanContext;
+
 import java.util.Map;
 
 /**
  * Skywalking tracer context based on {@link ThreadLocal} auto mechanism.
- *
- * @author wusheng
  */
 public class SkywalkingContext implements SpanContext {
     public static final SkywalkingContext INSTANCE = new SkywalkingContext();
 
-    private SkywalkingContext() {
+    public SkywalkingContext() {
     }
 
     @Override

@@ -16,23 +16,28 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.spring.mvc.commons;
+
+import org.apache.skywalking.apm.util.StringUtil;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@link PathMappingCache} cache all request urls of {@link org.springframework.stereotype.Controller} .
- *
- * @author zhangxin
  */
 public class PathMappingCache {
+
+    private static final String PATH_SEPARATOR = "/";
+
     private String classPath = "";
 
     private ConcurrentHashMap<Method, String> methodPathMapping = new ConcurrentHashMap<Method, String>();
 
     public PathMappingCache(String classPath) {
+        if (!StringUtil.isEmpty(classPath) && !classPath.startsWith(PATH_SEPARATOR)) {
+            classPath = PATH_SEPARATOR + classPath;
+        }
         this.classPath = classPath;
     }
 
@@ -41,6 +46,9 @@ public class PathMappingCache {
     }
 
     public void addPathMapping(Method method, String methodPath) {
-        methodPathMapping.put(method, classPath + methodPath);
+        if (!StringUtil.isEmpty(methodPath) && !methodPath.startsWith(PATH_SEPARATOR) && !classPath.endsWith(PATH_SEPARATOR)) {
+            methodPath = PATH_SEPARATOR + methodPath;
+        }
+        methodPathMapping.put(method, (classPath + methodPath).replace("//", "/"));
     }
 }

@@ -16,21 +16,20 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.test.tools;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
-import org.apache.skywalking.apm.agent.core.conf.RemoteDownstreamConfig;
-import org.apache.skywalking.apm.agent.core.context.TracingContext;
-import org.junit.rules.ExternalResource;
 import org.apache.skywalking.apm.agent.core.boot.BootService;
 import org.apache.skywalking.apm.agent.core.boot.ServiceManager;
 import org.apache.skywalking.apm.agent.core.conf.Config;
 import org.apache.skywalking.apm.agent.core.context.IgnoredTracerContext;
+import org.apache.skywalking.apm.agent.core.context.TracingContext;
 import org.apache.skywalking.apm.agent.core.context.TracingContextListener;
 import org.apache.skywalking.apm.agent.core.logging.core.LogLevel;
+import org.apache.skywalking.apm.agent.core.plugin.loader.AgentClassLoader;
 import org.apache.skywalking.apm.agent.test.helper.FieldSetter;
+import org.junit.rules.ExternalResource;
 
 public class AgentServiceRule extends ExternalResource {
 
@@ -38,9 +37,12 @@ public class AgentServiceRule extends ExternalResource {
     protected void after() {
         super.after();
         try {
-            FieldSetter.setValue(ServiceManager.INSTANCE.getClass(), "bootedServices", new HashMap<Class, BootService>());
-            FieldSetter.setValue(IgnoredTracerContext.ListenerManager.class, "LISTENERS", new LinkedList<TracingContextListener>());
-            FieldSetter.setValue(TracingContext.ListenerManager.class, "LISTENERS", new LinkedList<TracingContextListener>());
+            FieldSetter.setValue(
+                ServiceManager.INSTANCE.getDeclaringClass(), "bootedServices", new HashMap<Class, BootService>());
+            FieldSetter.setValue(
+                IgnoredTracerContext.ListenerManager.class, "LISTENERS", new ArrayList<TracingContextListener>());
+            FieldSetter.setValue(
+                TracingContext.ListenerManager.class, "LISTENERS", new ArrayList<TracingContextListener>());
             ServiceManager.INSTANCE.shutdown();
         } catch (Exception e) {
         }
@@ -49,9 +51,9 @@ public class AgentServiceRule extends ExternalResource {
     @Override
     protected void before() throws Throwable {
         super.before();
+        AgentClassLoader.initDefaultLoader();
         Config.Logging.LEVEL = LogLevel.OFF;
         ServiceManager.INSTANCE.boot();
-        RemoteDownstreamConfig.Agent.APPLICATION_ID = 1;
-        RemoteDownstreamConfig.Agent.APPLICATION_INSTANCE_ID = 1;
+        Config.Agent.KEEP_TRACING = true;
     }
 }

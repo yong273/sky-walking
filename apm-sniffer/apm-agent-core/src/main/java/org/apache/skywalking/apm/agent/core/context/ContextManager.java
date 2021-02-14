@@ -16,65 +16,49 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.core.context;
 
+import java.util.Objects;
 import org.apache.skywalking.apm.agent.core.boot.BootService;
 import org.apache.skywalking.apm.agent.core.boot.ServiceManager;
-import org.apache.skywalking.apm.agent.core.conf.Config;
-import org.apache.skywalking.apm.agent.core.conf.RemoteDownstreamConfig;
 import org.apache.skywalking.apm.agent.core.context.trace.AbstractSpan;
 import org.apache.skywalking.apm.agent.core.context.trace.TraceSegment;
-import org.apache.skywalking.apm.agent.core.dictionary.DictionaryUtil;
 import org.apache.skywalking.apm.agent.core.logging.api.ILog;
 import org.apache.skywalking.apm.agent.core.logging.api.LogManager;
 import org.apache.skywalking.apm.agent.core.sampling.SamplingService;
 import org.apache.skywalking.apm.util.StringUtil;
 
+import static org.apache.skywalking.apm.agent.core.conf.Config.Agent.OPERATION_NAME_THRESHOLD;
+
 /**
  * {@link ContextManager} controls the whole context of {@link TraceSegment}. Any {@link TraceSegment} relates to
  * single-thread, so this context use {@link ThreadLocal} to maintain the context, and make sure, since a {@link
- * TraceSegment} starts, all ChildOf spans are in the same context. <p> What is 'ChildOf'? {@see
- * https://github.com/opentracing/specification/blob/master/specification.md#references-between-spans}
+ * TraceSegment} starts, all ChildOf spans are in the same context. <p> What is 'ChildOf'?
+ * https://github.com/opentracing/specification/blob/master/specification.md#references-between-spans
  *
  * <p> Also, {@link ContextManager} delegates to all {@link AbstractTracerContext}'s major methods.
- *
- * @author wusheng
  */
-public class ContextManager implements TracingContextListener, BootService, IgnoreTracerContextListener {
-    private static final ILog logger = LogManager.getLogger(ContextManager.class);
-
+public class ContextManager implements BootService {
+    private static final String EMPTY_TRACE_CONTEXT_ID = "N/A";
+    private static final ILog LOGGER = LogManager.getLogger(ContextManager.class);
     private static ThreadLocal<AbstractTracerContext> CONTEXT = new ThreadLocal<AbstractTracerContext>();
+    private static ThreadLocal<RuntimeContext> RUNTIME_CONTEXT = new ThreadLocal<RuntimeContext>();
+    private static ContextManagerExtendService EXTEND_SERVICE;
 
     private static AbstractTracerContext getOrCreate(String operationName, boolean forceSampling) {
         AbstractTracerContext context = CONTEXT.get();
         if (context == null) {
             if (StringUtil.isEmpty(operationName)) {
-                if (logger.isDebugEnable()) {
-                    logger.debug("No operation name, ignore this trace.");
+                if (LOGGER.isDebugEnable()) {
+                    LOGGER.debug("No operation name, ignore this trace.");
                 }
                 context = new IgnoredTracerContext();
             } else {
-                if (RemoteDownstreamConfig.Agent.APPLICATION_ID != DictionaryUtil.nullValue()
-                    && RemoteDownstreamConfig.Agent.APPLICATION_INSTANCE_ID != DictionaryUtil.nullValue()
-                    ) {
-                    int suffixIdx = operationName.lastIndexOf(".");
-                    if (suffixIdx > -1 && Config.Agent.IGNORE_SUFFIX.contains(operationName.substring(suffixIdx))) {
-                        context = new IgnoredTracerContext();
-                    } else {
-                        SamplingService samplingService = ServiceManager.INSTANCE.findService(SamplingService.class);
-                        if (forceSampling || samplingService.trySampling()) {
-                            context = new TracingContext();
-                        } else {
-                            context = new IgnoredTracerContext();
-                        }
-                    }
-                } else {
-                    /**
-                     * Can't register to collector, no need to trace anything.
-                     */
-                    context = new IgnoredTracerContext();
+                if (EXTEND_SERVICE == null) {
+                    EXTEND_SERVICE = ServiceManager.INSTANCE.findService(ContextManagerExtendService.class);
                 }
+                context = EXTEND_SERVICE.createTraceContext(operationName, forceSampling);
+
             }
             CONTEXT.set(context);
         }
@@ -86,22 +70,35 @@ public class ContextManager implements TracingContextListener, BootService, Igno
     }
 
     /**
-     * @return the first global trace id if needEnhance. Otherwise, "N/A".
+     * @return the first global trace id when tracing. Otherwise, "N/A".
      */
     public static String getGlobalTraceId() {
-        AbstractTracerContext segment = CONTEXT.get();
-        if (segment == null) {
-            return "N/A";
-        } else {
-            return segment.getReadableGlobalTraceId();
-        }
+        AbstractTracerContext context = CONTEXT.get();
+        return Objects.nonNull(context) ? context.getReadablePrimaryTraceId() : EMPTY_TRACE_CONTEXT_ID;
+    }
+
+    /**
+     * @return the current segment id when tracing. Otherwise, "N/A".
+     */
+    public static String getSegmentId() {
+        AbstractTracerContext context = CONTEXT.get();
+        return Objects.nonNull(context) ? context.getSegmentId() : EMPTY_TRACE_CONTEXT_ID;
+    }
+
+    /**
+     * @return the current span id when tracing. Otherwise, the value is -1.
+     */
+    public static int getSpanId() {
+        AbstractTracerContext context = CONTEXT.get();
+        return Objects.nonNull(context) ? context.getSpanId() : -1;
     }
 
     public static AbstractSpan createEntrySpan(String operationName, ContextCarrier carrier) {
-        SamplingService samplingService = ServiceManager.INSTANCE.findService(SamplingService.class);
         AbstractSpan span;
         AbstractTracerContext context;
+        operationName = StringUtil.cut(operationName, OPERATION_NAME_THRESHOLD);
         if (carrier != null && carrier.isValid()) {
+            SamplingService samplingService = ServiceManager.INSTANCE.findService(SamplingService.class);
             samplingService.forceSampled();
             context = getOrCreate(operationName, true);
             span = context.createEntrySpan(operationName);
@@ -114,6 +111,7 @@ public class ContextManager implements TracingContextListener, BootService, Igno
     }
 
     public static AbstractSpan createLocalSpan(String operationName) {
+        operationName = StringUtil.cut(operationName, OPERATION_NAME_THRESHOLD);
         AbstractTracerContext context = getOrCreate(operationName, false);
         return context.createLocalSpan(operationName);
     }
@@ -122,6 +120,7 @@ public class ContextManager implements TracingContextListener, BootService, Igno
         if (carrier == null) {
             throw new IllegalArgumentException("ContextCarrier can't be null.");
         }
+        operationName = StringUtil.cut(operationName, OPERATION_NAME_THRESHOLD);
         AbstractTracerContext context = getOrCreate(operationName, false);
         AbstractSpan span = context.createExitSpan(operationName, remotePeer);
         context.inject(carrier);
@@ -129,9 +128,9 @@ public class ContextManager implements TracingContextListener, BootService, Igno
     }
 
     public static AbstractSpan createExitSpan(String operationName, String remotePeer) {
+        operationName = StringUtil.cut(operationName, OPERATION_NAME_THRESHOLD);
         AbstractTracerContext context = getOrCreate(operationName, false);
-        AbstractSpan span = context.createExitSpan(operationName, remotePeer);
-        return span;
+        return context.createExitSpan(operationName, remotePeer);
     }
 
     public static void inject(ContextCarrier carrier) {
@@ -155,50 +154,89 @@ public class ContextManager implements TracingContextListener, BootService, Igno
         if (snapshot == null) {
             throw new IllegalArgumentException("ContextSnapshot can't be null.");
         }
-        if (snapshot.isValid() && !snapshot.isFromCurrent()) {
+        if (!snapshot.isFromCurrent()) {
             get().continued(snapshot);
         }
     }
 
+    public static AbstractTracerContext awaitFinishAsync(AbstractSpan span) {
+        final AbstractTracerContext context = get();
+        AbstractSpan activeSpan = context.activeSpan();
+        if (span != activeSpan) {
+            throw new RuntimeException("Span is not the active in current context.");
+        }
+        return context.awaitFinishAsync();
+    }
+
+    /**
+     * If not sure has the active span, use this method, will be cause NPE when has no active span, use
+     * ContextManager::isActive method to determine whether there has the active span.
+     */
     public static AbstractSpan activeSpan() {
         return get().activeSpan();
     }
 
+    /**
+     * Recommend use ContextManager::stopSpan(AbstractSpan span), because in that way, the TracingContext core could
+     * verify this span is the active one, in order to avoid stop unexpected span. If the current span is hard to get or
+     * only could get by low-performance way, this stop way is still acceptable.
+     */
     public static void stopSpan() {
-        stopSpan(activeSpan());
+        final AbstractTracerContext context = get();
+        stopSpan(context.activeSpan(), context);
     }
 
     public static void stopSpan(AbstractSpan span) {
-        get().stopSpan(span);
+        stopSpan(span, get());
+    }
+
+    private static void stopSpan(AbstractSpan span, final AbstractTracerContext context) {
+        if (context.stopSpan(span)) {
+            CONTEXT.remove();
+            RUNTIME_CONTEXT.remove();
+        }
     }
 
     @Override
-    public void beforeBoot() throws Throwable {
+    public void prepare() {
 
     }
 
     @Override
     public void boot() {
-        TracingContext.ListenerManager.add(this);
-        IgnoredTracerContext.ListenerManager.add(this);
     }
 
     @Override
-    public void afterBoot() throws Throwable {
-
-    }
-
-    @Override public void shutdown() throws Throwable {
+    public void onComplete() {
 
     }
 
     @Override
-    public void afterFinished(TraceSegment traceSegment) {
-        CONTEXT.remove();
+    public void shutdown() {
+
     }
 
-    @Override
-    public void afterFinished(IgnoredTracerContext traceSegment) {
-        CONTEXT.remove();
+    public static boolean isActive() {
+        return get() != null;
     }
+
+    public static RuntimeContext getRuntimeContext() {
+        RuntimeContext runtimeContext = RUNTIME_CONTEXT.get();
+        if (runtimeContext == null) {
+            runtimeContext = new RuntimeContext(RUNTIME_CONTEXT);
+            RUNTIME_CONTEXT.set(runtimeContext);
+        }
+
+        return runtimeContext;
+    }
+
+    public static CorrelationContext getCorrelationContext() {
+        final AbstractTracerContext tracerContext = get();
+        if (tracerContext == null) {
+            return null;
+        }
+
+        return tracerContext.getCorrelationContext();
+    }
+
 }

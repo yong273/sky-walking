@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.xmemcached.v2;
 
 import java.net.InetSocketAddress;
@@ -26,27 +25,12 @@ import java.util.Map.Entry;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.EnhancedInstance;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.InstanceConstructorInterceptor;
 
-/**
- * {@link XMemcachedConstructorWithComplexArgInterceptor} intercept constructor of 
- * {@link XMemcachedClient(MemcachedSessionLocator locator,BufferAllocator allocator, Configuration conf,
- * Map<SocketOption, Object> socketOptions, CommandFactory commandFactory, Transcoder transcoder,
- * Map<InetSocketAddress, InetSocketAddress> addressMap, List<MemcachedClientStateListener> stateListeners,
- * Map<InetSocketAddress, AuthInfo> map, int poolSize, long connectTimeout, String name, boolean failureMode)} or
- * {@link XMemcachedClient(MemcachedSessionLocator locator, BufferAllocator allocator, Configuration conf,
- * Map<SocketOption, Object> socketOptions, CommandFactory commandFactory, Transcoder transcoder,
- * Map<InetSocketAddress, InetSocketAddress> addressMap, int[] weights, List<MemcachedClientStateListener> stateListeners,
- * Map<InetSocketAddress, AuthInfo> infoMap, int poolSize, long connectTimeout, final String name, boolean failureMode)}.
- * For parameter addressMap, every k-v is a master standby mode.
- * 
- * @author IluckySi
- */
 public class XMemcachedConstructorWithComplexArgInterceptor implements InstanceConstructorInterceptor {
 
     @Override
     public void onConstruct(EnhancedInstance objInst, Object[] allArguments) {
         StringBuilder memcachConnInfo = new StringBuilder();
-        @SuppressWarnings("unchecked")
-        Map<InetSocketAddress, InetSocketAddress> inetSocketAddressMap = (Map<InetSocketAddress, InetSocketAddress>)allArguments[6];
+        @SuppressWarnings("unchecked") Map<InetSocketAddress, InetSocketAddress> inetSocketAddressMap = (Map<InetSocketAddress, InetSocketAddress>) allArguments[6];
         for (Entry<InetSocketAddress, InetSocketAddress> entry : inetSocketAddressMap.entrySet()) {
             memcachConnInfo = append(memcachConnInfo, entry.getKey());
             memcachConnInfo = append(memcachConnInfo, entry.getValue());
@@ -60,9 +44,6 @@ public class XMemcachedConstructorWithComplexArgInterceptor implements InstanceC
 
     /**
      * Parse InetSocketAddress in specified format
-     * @param sb
-     * @param inetSocketAddress
-     * @return
      */
     private StringBuilder append(StringBuilder sb, InetSocketAddress inetSocketAddress) {
         if (inetSocketAddress != null) {

@@ -16,21 +16,22 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.spring.mvc.v3;
 
 import java.lang.reflect.Method;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.skywalking.apm.agent.core.context.ContextManager;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.EnhancedInstance;
-import org.apache.skywalking.apm.plugin.spring.mvc.commons.EnhanceRequireObjectCache;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.InstanceMethodsAroundInterceptor;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.MethodInterceptResult;
+import org.apache.skywalking.apm.plugin.spring.mvc.commons.JavaxServletResponseHolder;
 import org.springframework.web.context.request.NativeWebRequest;
+
+import static org.apache.skywalking.apm.plugin.spring.mvc.commons.Constants.RESPONSE_KEY_IN_RUNTIME_CONTEXT;
 
 /**
  * {@link HandlerMethodInvokerInterceptor} pass the {@link NativeWebRequest} object into the {@link
  * org.springframework.stereotype.Controller} object.
- *
- * @author zhangxin
  */
 public class HandlerMethodInvokerInterceptor implements InstanceMethodsAroundInterceptor {
     @Override
@@ -38,7 +39,9 @@ public class HandlerMethodInvokerInterceptor implements InstanceMethodsAroundInt
         MethodInterceptResult result) throws Throwable {
         Object handler = allArguments[1];
         if (handler instanceof EnhancedInstance) {
-            ((EnhanceRequireObjectCache)((EnhancedInstance)handler).getSkyWalkingDynamicField()).setNativeWebRequest((NativeWebRequest)allArguments[2]);
+            ContextManager.getRuntimeContext()
+                          .put(RESPONSE_KEY_IN_RUNTIME_CONTEXT, new JavaxServletResponseHolder(
+                              (HttpServletResponse) ((NativeWebRequest) allArguments[2]).getNativeResponse()));
         }
     }
 
@@ -48,7 +51,8 @@ public class HandlerMethodInvokerInterceptor implements InstanceMethodsAroundInt
         return ret;
     }
 
-    @Override public void handleMethodException(EnhancedInstance objInst, Method method, Object[] allArguments,
+    @Override
+    public void handleMethodException(EnhancedInstance objInst, Method method, Object[] allArguments,
         Class<?>[] argumentsTypes, Throwable t) {
 
     }

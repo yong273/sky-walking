@@ -16,22 +16,14 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.jdbc.h2;
 
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.EnhancedInstance;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.InstanceConstructorInterceptor;
-import org.apache.skywalking.apm.plugin.jdbc.trace.ConnectionInfo;
 
-/**
- * {@link PooledJdbcConnectionConstructorInterceptor } store {@link ConnectionInfo}
- * when the client new instance of {@link org.h2.jdbcx.JdbcXAConnection$PooledJdbcConnection}.
- *
- * @author zhangxin
- */
 public class PooledJdbcConnectionConstructorInterceptor implements InstanceConstructorInterceptor {
     @Override
     public void onConstruct(EnhancedInstance objInst, Object[] allArguments) {
-        objInst.setSkyWalkingDynamicField(((EnhancedInstance)allArguments[0]).getSkyWalkingDynamicField());
+        objInst.setSkyWalkingDynamicField(((EnhancedInstance) allArguments[0]).getSkyWalkingDynamicField());
     }
 }

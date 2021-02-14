@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.jdbc;
 
 import com.mysql.cj.api.jdbc.JdbcConnection;
@@ -110,7 +109,10 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
     private JdbcConnection jdbcConnection;
     private SWConnection swConnection;
     private SWConnection multiHostConnection;
-    private byte[] bytesParam = new byte[] {1, 2};
+    private byte[] bytesParam = new byte[] {
+        1,
+        2
+    };
 
     @Before
     public void setUp() throws Exception {
@@ -125,11 +127,7 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
 
     @Test
     public void testSetParam() throws SQLException, MalformedURLException {
-        PreparedStatement preparedStatement = multiHostConnection.prepareStatement("SELECT * FROM test WHERE a = ? or b = ? or c=? or d = ? or e = ?" +
-            " or e = ? or f = ? or g = ? or h = ? or i = ? or j = ? or k = ? or l = ? or m = ?  or n = ? or o = ? or p = ? " +
-            " or r = ?  or s = ? or t = ?  or u = ?  or v = ?  or w = ?  or x = ?  or y = ? or z = ? or a1 = ? or a2 = ? or a3 = ?" +
-            " or a4 = ? or a5 = ? or a6 = ?  or a7 = ?  or a8 = ?  or a9 = ? or b1 = ? or b2 = ? or b3 = ? or b4 = ? or b5 = ?" +
-            " or b6 = ? or b7 = ? or b8  = ? or b9 = ? or c1 = ?  or c2 = ? or c3 = ?");
+        PreparedStatement preparedStatement = multiHostConnection.prepareStatement("SELECT * FROM test WHERE a = ? or b = ? or c=? or d = ? or e = ?" + " or e = ? or f = ? or g = ? or h = ? or i = ? or j = ? or k = ? or l = ? or m = ?  or n = ? or o = ? or p = ? " + " or r = ?  or s = ? or t = ?  or u = ?  or v = ?  or w = ?  or x = ?  or y = ? or z = ? or a1 = ? or a2 = ? or a3 = ?" + " or a4 = ? or a5 = ? or a6 = ?  or a7 = ?  or a8 = ?  or a9 = ? or b1 = ? or b2 = ? or b3 = ? or b4 = ? or b5 = ?" + " or b6 = ? or b7 = ? or b8  = ? or b9 = ? or c1 = ?  or c2 = ? or c3 = ?");
         preparedStatement.clearParameters();
         preparedStatement.setAsciiStream(1, inputStream);
         preparedStatement.setAsciiStream(2, inputStream, 10);
@@ -137,14 +135,14 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.setCharacterStream(4, reader);
         preparedStatement.setCharacterStream(4, reader, 10);
         preparedStatement.setCharacterStream(5, reader, 10L);
-        preparedStatement.setShort(6, (short)12);
+        preparedStatement.setShort(6, (short) 12);
         preparedStatement.setInt(7, 1);
         preparedStatement.setString(8, "test");
         preparedStatement.setBoolean(9, true);
         preparedStatement.setLong(10, 100L);
         preparedStatement.setDouble(11, 12.0);
         preparedStatement.setFloat(12, 12.0f);
-        preparedStatement.setByte(13, (byte)1);
+        preparedStatement.setByte(13, (byte) 1);
         preparedStatement.setBytes(14, bytesParam);
         preparedStatement.setDate(15, new Date(System.currentTimeMillis()));
         preparedStatement.setNull(16, 1);
@@ -182,57 +180,57 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         ResultSet resultSet = preparedStatement.executeQuery();
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).clearParameters();
-        verify(mysqlPreparedStatement, times(1)).executeQuery();
-        verify(mysqlPreparedStatement, times(1)).close();
-        verify(mysqlPreparedStatement, times(1)).setAsciiStream(anyInt(), any(InputStream.class));
-        verify(mysqlPreparedStatement, times(1)).setAsciiStream(anyInt(), any(InputStream.class), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setAsciiStream(anyInt(), any(InputStream.class), anyLong());
-        verify(mysqlPreparedStatement, times(1)).setCharacterStream(anyInt(), any(Reader.class));
-        verify(mysqlPreparedStatement, times(1)).setCharacterStream(anyInt(), any(Reader.class), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setCharacterStream(anyInt(), any(Reader.class), anyLong());
-        verify(mysqlPreparedStatement, times(1)).setShort(anyInt(), anyShort());
-        verify(mysqlPreparedStatement, times(1)).setInt(anyInt(), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setString(anyInt(), anyString());
-        verify(mysqlPreparedStatement, times(1)).setBoolean(anyInt(), anyBoolean());
-        verify(mysqlPreparedStatement, times(1)).setLong(anyInt(), anyLong());
-        verify(mysqlPreparedStatement, times(1)).setDouble(anyInt(), anyDouble());
-        verify(mysqlPreparedStatement, times(1)).setFloat(anyInt(), anyFloat());
-        verify(mysqlPreparedStatement, times(1)).setByte(anyInt(), anyByte());
-        verify(mysqlPreparedStatement, times(1)).setBytes(14, bytesParam);
-        verify(mysqlPreparedStatement, times(1)).setDate(anyInt(), any(Date.class));
-        verify(mysqlPreparedStatement, times(1)).setNull(anyInt(), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setNull(anyInt(), anyInt(), anyString());
-        verify(mysqlPreparedStatement, times(1)).setBigDecimal(anyInt(), any(BigDecimal.class));
-        verify(mysqlPreparedStatement, times(1)).setBlob(anyInt(), any(InputStream.class));
-        verify(mysqlPreparedStatement, times(1)).setBlob(anyInt(), any(InputStream.class), anyLong());
-        verify(mysqlPreparedStatement, times(1)).setClob(anyInt(), any(Clob.class));
-        verify(mysqlPreparedStatement, times(1)).setClob(anyInt(), any(Reader.class));
-        verify(mysqlPreparedStatement, times(1)).setClob(anyInt(), any(Reader.class), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setNString(anyInt(), anyString());
-        verify(mysqlPreparedStatement, times(1)).setNCharacterStream(anyInt(), any(Reader.class));
-        verify(mysqlPreparedStatement, times(1)).setNCharacterStream(anyInt(), any(Reader.class), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setNClob(27, nClob);
-        verify(mysqlPreparedStatement, times(1)).setNClob(28, reader, 1);
-        verify(mysqlPreparedStatement, times(1)).setObject(anyInt(), Matchers.anyObject());
-        verify(mysqlPreparedStatement, times(1)).setObject(anyInt(), Matchers.anyObject(), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setObject(anyInt(), Matchers.anyObject(), anyInt(), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setRef(anyInt(), any(Ref.class));
-        verify(mysqlPreparedStatement, times(1)).setRowId(anyInt(), any(RowId.class));
-        verify(mysqlPreparedStatement, times(1)).setSQLXML(anyInt(), any(SQLXML.class));
-        verify(mysqlPreparedStatement, times(1)).setTime(anyInt(), any(Time.class));
-        verify(mysqlPreparedStatement, times(1)).setTimestamp(anyInt(), any(Timestamp.class));
-        verify(mysqlPreparedStatement, times(1)).setTimestamp(anyInt(), any(Timestamp.class), any(Calendar.class));
-        verify(mysqlPreparedStatement, times(1)).setURL(anyInt(), any(URL.class));
-        verify(mysqlPreparedStatement, times(1)).setBinaryStream(anyInt(), any(InputStream.class));
-        verify(mysqlPreparedStatement, times(1)).setBinaryStream(anyInt(), any(InputStream.class), anyInt());
-        verify(mysqlPreparedStatement, times(1)).setBinaryStream(anyInt(), any(InputStream.class), anyLong());
-        verify(mysqlPreparedStatement, times(1)).setNClob(42, reader);
-        verify(mysqlPreparedStatement, times(1)).setTime(anyInt(), any(Time.class), any(Calendar.class));
-        verify(mysqlPreparedStatement, times(1)).setTimestamp(anyInt(), any(Timestamp.class), any(Calendar.class));
-        verify(mysqlPreparedStatement, times(1)).setArray(anyInt(), any(Array.class));
-        verify(mysqlPreparedStatement, times(1)).setBlob(anyInt(), any(Blob.class));
-        verify(mysqlPreparedStatement, times(1)).setDate(anyInt(), any(Date.class), any(Calendar.class));
+        verify(mysqlPreparedStatement).clearParameters();
+        verify(mysqlPreparedStatement).executeQuery();
+        verify(mysqlPreparedStatement).close();
+        verify(mysqlPreparedStatement).setAsciiStream(anyInt(), any(InputStream.class));
+        verify(mysqlPreparedStatement).setAsciiStream(anyInt(), any(InputStream.class), anyInt());
+        verify(mysqlPreparedStatement).setAsciiStream(anyInt(), any(InputStream.class), anyLong());
+        verify(mysqlPreparedStatement).setCharacterStream(anyInt(), any(Reader.class));
+        verify(mysqlPreparedStatement).setCharacterStream(anyInt(), any(Reader.class), anyInt());
+        verify(mysqlPreparedStatement).setCharacterStream(anyInt(), any(Reader.class), anyLong());
+        verify(mysqlPreparedStatement).setShort(anyInt(), anyShort());
+        verify(mysqlPreparedStatement).setInt(anyInt(), anyInt());
+        verify(mysqlPreparedStatement).setString(anyInt(), anyString());
+        verify(mysqlPreparedStatement).setBoolean(anyInt(), anyBoolean());
+        verify(mysqlPreparedStatement).setLong(anyInt(), anyLong());
+        verify(mysqlPreparedStatement).setDouble(anyInt(), anyDouble());
+        verify(mysqlPreparedStatement).setFloat(anyInt(), anyFloat());
+        verify(mysqlPreparedStatement).setByte(anyInt(), anyByte());
+        verify(mysqlPreparedStatement).setBytes(14, bytesParam);
+        verify(mysqlPreparedStatement).setDate(anyInt(), any(Date.class));
+        verify(mysqlPreparedStatement).setNull(anyInt(), anyInt());
+        verify(mysqlPreparedStatement).setNull(anyInt(), anyInt(), anyString());
+        verify(mysqlPreparedStatement).setBigDecimal(anyInt(), any(BigDecimal.class));
+        verify(mysqlPreparedStatement).setBlob(anyInt(), any(InputStream.class));
+        verify(mysqlPreparedStatement).setBlob(anyInt(), any(InputStream.class), anyLong());
+        verify(mysqlPreparedStatement).setClob(anyInt(), any(Clob.class));
+        verify(mysqlPreparedStatement).setClob(anyInt(), any(Reader.class));
+        verify(mysqlPreparedStatement).setClob(anyInt(), any(Reader.class), anyLong());
+        verify(mysqlPreparedStatement).setNString(anyInt(), anyString());
+        verify(mysqlPreparedStatement).setNCharacterStream(anyInt(), any(Reader.class));
+        verify(mysqlPreparedStatement).setNCharacterStream(anyInt(), any(Reader.class), anyLong());
+        verify(mysqlPreparedStatement).setNClob(27, nClob);
+        verify(mysqlPreparedStatement).setNClob(28, reader, 1);
+        verify(mysqlPreparedStatement).setObject(anyInt(), Matchers.anyObject());
+        verify(mysqlPreparedStatement).setObject(anyInt(), Matchers.anyObject(), anyInt());
+        verify(mysqlPreparedStatement).setObject(anyInt(), Matchers.anyObject(), anyInt(), anyInt());
+        verify(mysqlPreparedStatement).setRef(anyInt(), any(Ref.class));
+        verify(mysqlPreparedStatement).setRowId(anyInt(), any(RowId.class));
+        verify(mysqlPreparedStatement).setSQLXML(anyInt(), any(SQLXML.class));
+        verify(mysqlPreparedStatement).setTime(anyInt(), any(Time.class));
+        verify(mysqlPreparedStatement).setTimestamp(anyInt(), any(Timestamp.class));
+        verify(mysqlPreparedStatement).setTimestamp(anyInt(), any(Timestamp.class), any(Calendar.class));
+        verify(mysqlPreparedStatement).setURL(anyInt(), any(URL.class));
+        verify(mysqlPreparedStatement).setBinaryStream(anyInt(), any(InputStream.class));
+        verify(mysqlPreparedStatement).setBinaryStream(anyInt(), any(InputStream.class), anyInt());
+        verify(mysqlPreparedStatement).setBinaryStream(anyInt(), any(InputStream.class), anyLong());
+        verify(mysqlPreparedStatement).setNClob(42, reader);
+        verify(mysqlPreparedStatement).setTime(anyInt(), any(Time.class), any(Calendar.class));
+        verify(mysqlPreparedStatement).setTimestamp(anyInt(), any(Timestamp.class), any(Calendar.class));
+        verify(mysqlPreparedStatement).setArray(anyInt(), any(Array.class));
+        verify(mysqlPreparedStatement).setBlob(anyInt(), any(Blob.class));
+        verify(mysqlPreparedStatement).setDate(anyInt(), any(Date.class), any(Calendar.class));
     }
 
     @Test
@@ -272,32 +270,32 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.getResultSet();
 
         preparedStatement.close();
-        verify(mysqlPreparedStatement, times(1)).getUpdateCount();
-        verify(mysqlPreparedStatement, times(1)).getMoreResults();
-        verify(mysqlPreparedStatement, times(1)).setFetchDirection(anyInt());
-        verify(mysqlPreparedStatement, times(1)).getFetchDirection();
-        verify(mysqlPreparedStatement, times(1)).getResultSetType();
-        verify(mysqlPreparedStatement, times(1)).isClosed();
-        verify(mysqlPreparedStatement, times(1)).setPoolable(anyBoolean());
-        verify(mysqlPreparedStatement, times(1)).getWarnings();
-        verify(mysqlPreparedStatement, times(1)).clearWarnings();
-        verify(mysqlPreparedStatement, times(1)).setCursorName(anyString());
-        verify(mysqlPreparedStatement, times(1)).setMaxFieldSize(anyInt());
-        verify(mysqlPreparedStatement, times(1)).getMaxFieldSize();
-        verify(mysqlPreparedStatement, times(1)).setMaxRows(anyInt());
-        verify(mysqlPreparedStatement, times(1)).getMaxRows();
-        verify(mysqlPreparedStatement, times(1)).setEscapeProcessing(anyBoolean());
-        verify(mysqlPreparedStatement, times(1)).getResultSetConcurrency();
-        verify(mysqlPreparedStatement, times(1)).getResultSetConcurrency();
-        verify(mysqlPreparedStatement, times(1)).getResultSetType();
-        verify(mysqlPreparedStatement, times(1)).getMetaData();
-        verify(mysqlPreparedStatement, times(1)).getParameterMetaData();
-        verify(mysqlPreparedStatement, times(1)).getMoreResults(anyInt());
-        verify(mysqlPreparedStatement, times(1)).setFetchSize(anyInt());
-        verify(mysqlPreparedStatement, times(1)).getFetchSize();
-        verify(mysqlPreparedStatement, times(1)).getQueryTimeout();
-        verify(mysqlPreparedStatement, times(1)).setQueryTimeout(anyInt());
-        verify(mysqlPreparedStatement, times(1)).getResultSet();
+        verify(mysqlPreparedStatement).getUpdateCount();
+        verify(mysqlPreparedStatement).getMoreResults();
+        verify(mysqlPreparedStatement).setFetchDirection(anyInt());
+        verify(mysqlPreparedStatement).getFetchDirection();
+        verify(mysqlPreparedStatement).getResultSetType();
+        verify(mysqlPreparedStatement).isClosed();
+        verify(mysqlPreparedStatement).setPoolable(anyBoolean());
+        verify(mysqlPreparedStatement).getWarnings();
+        verify(mysqlPreparedStatement).clearWarnings();
+        verify(mysqlPreparedStatement).setCursorName(anyString());
+        verify(mysqlPreparedStatement).setMaxFieldSize(anyInt());
+        verify(mysqlPreparedStatement).getMaxFieldSize();
+        verify(mysqlPreparedStatement).setMaxRows(anyInt());
+        verify(mysqlPreparedStatement).getMaxRows();
+        verify(mysqlPreparedStatement).setEscapeProcessing(anyBoolean());
+        verify(mysqlPreparedStatement).getResultSetConcurrency();
+        verify(mysqlPreparedStatement).getResultSetConcurrency();
+        verify(mysqlPreparedStatement).getResultSetType();
+        verify(mysqlPreparedStatement).getMetaData();
+        verify(mysqlPreparedStatement).getParameterMetaData();
+        verify(mysqlPreparedStatement).getMoreResults(anyInt());
+        verify(mysqlPreparedStatement).setFetchSize(anyInt());
+        verify(mysqlPreparedStatement).getFetchSize();
+        verify(mysqlPreparedStatement).getQueryTimeout();
+        verify(mysqlPreparedStatement).setQueryTimeout(anyInt());
+        verify(mysqlPreparedStatement).getResultSet();
         assertThat(connection, CoreMatchers.<Connection>is(swConnection));
     }
 
@@ -308,8 +306,8 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
 
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).executeQuery();
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).executeQuery();
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -323,8 +321,8 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
 
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).execute();
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).execute();
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -339,8 +337,8 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.getGeneratedKeys();
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).executeQuery(anyString());
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).executeQuery(anyString());
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -354,8 +352,8 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         boolean insertCount = preparedStatement.execute("INSERT INTO test VALUES(1)", 1);
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).execute(anyString(), anyInt());
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).execute(anyString(), anyInt());
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -366,10 +364,13 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
     @Test
     public void testInsertWithIntColumnIndexes() throws SQLException {
         PreparedStatement preparedStatement = swConnection.prepareStatement("INSERT INTO test VALUES(?)", 1);
-        boolean insertCount = preparedStatement.execute("INSERT INTO test VALUES(1)", new int[] {1, 2});
+        boolean insertCount = preparedStatement.execute("INSERT INTO test VALUES(1)", new int[] {
+            1,
+            2
+        });
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -380,10 +381,13 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
     @Test
     public void testInsertWithStringColumnIndexes() throws SQLException {
         PreparedStatement preparedStatement = swConnection.prepareStatement("INSERT INTO test VALUES(?)", 1);
-        boolean insertCount = preparedStatement.execute("INSERT INTO test VALUES(1)", new String[] {"1", "2"});
+        boolean insertCount = preparedStatement.execute("INSERT INTO test VALUES(1)", new String[] {
+            "1",
+            "2"
+        });
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -399,8 +403,8 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.cancel();
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).execute(anyString());
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).execute(anyString());
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -416,8 +420,8 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.cancel();
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).executeUpdate();
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).executeUpdate();
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -433,8 +437,8 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.cancel();
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).executeUpdate(anyString());
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).executeUpdate(anyString());
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -450,7 +454,7 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.cancel();
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -465,7 +469,7 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.cancel();
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -481,7 +485,7 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
         preparedStatement.cancel();
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).close();
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
         assertThat(spans.size(), is(1));
@@ -491,15 +495,15 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
     @Test
     public void testBatch() throws SQLException, MalformedURLException {
         PreparedStatement preparedStatement = multiHostConnection.prepareStatement("UPDATE test SET a = ? WHERE b = ?");
-        preparedStatement.setShort(1, (short)12);
+        preparedStatement.setShort(1, (short) 12);
         preparedStatement.setTime(2, new Time(System.currentTimeMillis()));
         preparedStatement.addBatch();
         int[] resultSet = preparedStatement.executeBatch();
         preparedStatement.clearBatch();
 
-        verify(mysqlPreparedStatement, times(1)).executeBatch();
-        verify(mysqlPreparedStatement, times(1)).addBatch();
-        verify(mysqlPreparedStatement, times(1)).clearBatch();
+        verify(mysqlPreparedStatement).executeBatch();
+        verify(mysqlPreparedStatement).addBatch();
+        verify(mysqlPreparedStatement).clearBatch();
 
         TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
         List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);
@@ -519,8 +523,8 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
 
         preparedStatement.close();
 
-        verify(mysqlPreparedStatement, times(1)).executeQuery();
-        verify(mysqlPreparedStatement, times(1)).close();
+        verify(mysqlPreparedStatement).executeQuery();
+        verify(mysqlPreparedStatement).close();
     }
 
     @Test(expected = SQLException.class)
@@ -531,20 +535,23 @@ public class SwPreparedStatementTest extends AbstractStatementTest {
             preparedStatement.setBigDecimal(1, new BigDecimal(10000));
             preparedStatement.setBlob(2, inputStream);
             preparedStatement.setBlob(3, inputStream, 1000000L);
-            preparedStatement.setByte(3, (byte)1);
-            preparedStatement.setBytes(4, new byte[] {1, 2});
+            preparedStatement.setByte(3, (byte) 1);
+            preparedStatement.setBytes(4, new byte[] {
+                1,
+                2
+            });
             preparedStatement.setLong(5, 100L);
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
             preparedStatement.close();
         } finally {
-            verify(mysqlPreparedStatement, times(1)).executeQuery();
+            verify(mysqlPreparedStatement).executeQuery();
             verify(mysqlPreparedStatement, times(0)).close();
-            verify(mysqlPreparedStatement, times(1)).setBigDecimal(anyInt(), any(BigDecimal.class));
-            verify(mysqlPreparedStatement, times(1)).setBlob(anyInt(), any(InputStream.class));
-            verify(mysqlPreparedStatement, times(1)).setBlob(anyInt(), any(InputStream.class), anyLong());
-            verify(mysqlPreparedStatement, times(1)).setByte(anyInt(), anyByte());
+            verify(mysqlPreparedStatement).setBigDecimal(anyInt(), any(BigDecimal.class));
+            verify(mysqlPreparedStatement).setBlob(anyInt(), any(InputStream.class));
+            verify(mysqlPreparedStatement).setBlob(anyInt(), any(InputStream.class), anyLong());
+            verify(mysqlPreparedStatement).setByte(anyInt(), anyByte());
 
             TraceSegment traceSegment = segmentStorage.getTraceSegments().get(0);
             List<AbstractTracingSpan> spans = SegmentHelper.getSpans(traceSegment);

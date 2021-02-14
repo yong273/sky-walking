@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.feign.http.v9.define;
 
 import net.bytebuddy.description.method.MethodDescription;
@@ -25,19 +24,10 @@ import org.apache.skywalking.apm.agent.core.plugin.interceptor.ConstructorInterc
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.InstanceMethodsInterceptPoint;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.ClassInstanceMethodsEnhancePluginDefine;
 import org.apache.skywalking.apm.agent.core.plugin.match.ClassMatch;
-import org.apache.skywalking.apm.plugin.feign.http.v9.DefaultHttpClientInterceptor;
 
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static org.apache.skywalking.apm.agent.core.plugin.match.NameMatch.byName;
 
-/**
- * {@link DefaultHttpClientInstrumentation} presents that skywalking intercepts {@link
- * feign.Client.Default#execute(feign.Request, feign.Request.Options)} by using {@link DefaultHttpClientInterceptor}.
- * If feign did't run in default mode, the instrumentation depend on the http discovery implementation.
- * e.g. okhttp discovery implementation depend on okhttp-plugin.
- *
- * @author peng-yongsheng
- */
 public class DefaultHttpClientInstrumentation extends ClassInstanceMethodsEnhancePluginDefine {
 
     /**
@@ -50,26 +40,32 @@ public class DefaultHttpClientInstrumentation extends ClassInstanceMethodsEnhanc
      */
     private static final String INTERCEPT_CLASS = "org.apache.skywalking.apm.plugin.feign.http.v9.DefaultHttpClientInterceptor";
 
-    @Override protected ClassMatch enhanceClass() {
+    @Override
+    protected ClassMatch enhanceClass() {
         return byName(ENHANCE_CLASS);
     }
 
-    @Override protected ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
+    @Override
+    public ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
         return new ConstructorInterceptPoint[0];
     }
 
-    @Override protected InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
+    @Override
+    public InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
         return new InstanceMethodsInterceptPoint[] {
             new InstanceMethodsInterceptPoint() {
-                @Override public ElementMatcher<MethodDescription> getMethodsMatcher() {
+                @Override
+                public ElementMatcher<MethodDescription> getMethodsMatcher() {
                     return named("execute");
                 }
 
-                @Override public String getMethodsInterceptor() {
+                @Override
+                public String getMethodsInterceptor() {
                     return INTERCEPT_CLASS;
                 }
 
-                @Override public boolean isOverrideArgs() {
+                @Override
+                public boolean isOverrideArgs() {
                     return false;
                 }
             }

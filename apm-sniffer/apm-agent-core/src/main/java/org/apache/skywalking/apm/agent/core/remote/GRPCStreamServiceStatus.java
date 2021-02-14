@@ -16,13 +16,13 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.core.remote;
 
-/**
- * @author wusheng
- */
+import org.apache.skywalking.apm.agent.core.logging.api.ILog;
+import org.apache.skywalking.apm.agent.core.logging.api.LogManager;
+
 public class GRPCStreamServiceStatus {
+    private static final ILog LOGGER = LogManager.getLogger(GRPCStreamServiceStatus.class);
     private volatile boolean status;
 
     public GRPCStreamServiceStatus(boolean status) {
@@ -38,18 +38,22 @@ public class GRPCStreamServiceStatus {
     }
 
     /**
-     * @param maxTimeout max wait time, milliseconds.
+     * Wait until success status reported.
      */
-    public boolean wait4Finish(long maxTimeout) {
-        long time = 0;
+    public void wait4Finish() {
+        long recheckCycle = 5;
+        long hasWaited = 0L;
+        long maxCycle = 30 * 1000L; // 30 seconds max.
         while (!status) {
-            if (time > maxTimeout) {
-                break;
+            try2Sleep(recheckCycle);
+            hasWaited += recheckCycle;
+
+            if (recheckCycle >= maxCycle) {
+                LOGGER.warn("Collector traceSegment service doesn't response in {} seconds.", hasWaited / 1000);
+            } else {
+                recheckCycle = Math.min(recheckCycle * 2, maxCycle);
             }
-            try2Sleep(5);
-            time += 5;
         }
-        return status;
     }
 
     /**
@@ -60,7 +64,7 @@ public class GRPCStreamServiceStatus {
     private void try2Sleep(long millis) {
         try {
             Thread.sleep(millis);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
 
         }
     }

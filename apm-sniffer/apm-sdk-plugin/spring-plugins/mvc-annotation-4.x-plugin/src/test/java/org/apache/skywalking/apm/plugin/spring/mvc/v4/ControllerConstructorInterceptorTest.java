@@ -16,7 +16,6 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.spring.mvc.v4;
 
 import java.lang.reflect.Method;
@@ -47,40 +46,40 @@ public class ControllerConstructorInterceptorTest {
     @Test
     public void testOnConstruct_Accuracy1() throws Throwable {
         controllerConstructorInterceptor.onConstruct(inst1, null);
-        EnhanceRequireObjectCache cache = (EnhanceRequireObjectCache)inst1.getSkyWalkingDynamicField();
+        EnhanceRequireObjectCache cache = (EnhanceRequireObjectCache) inst1.getSkyWalkingDynamicField();
         Assert.assertNotNull(cache);
 
         Object obj = new Object();
         Method m = obj.getClass().getMethods()[0];
         cache.addPathMapping(m, "#toString");
 
-        Assert.assertEquals("the two value should be equal", cache.findPathMapping(m), "/test1#toString");
+        Assert.assertEquals("the two value should be equal", cache.findPathMapping(m), "/test1/#toString");
     }
 
     @Test
     public void testOnConstruct_Accuracy2() throws Throwable {
         controllerConstructorInterceptor.onConstruct(inst2, null);
-        EnhanceRequireObjectCache cache = (EnhanceRequireObjectCache)inst2.getSkyWalkingDynamicField();
+        EnhanceRequireObjectCache cache = (EnhanceRequireObjectCache) inst2.getSkyWalkingDynamicField();
         Assert.assertNotNull(cache);
 
         Object obj = new Object();
         Method m = obj.getClass().getMethods()[0];
         cache.addPathMapping(m, "#toString");
 
-        Assert.assertEquals("the two value should be equal", cache.findPathMapping(m), "#toString");
+        Assert.assertEquals("the two value should be equal", cache.findPathMapping(m), "/#toString");
     }
 
     @Test
     public void testOnConstruct_Accuracy3() throws Throwable {
         controllerConstructorInterceptor.onConstruct(inst3, null);
-        EnhanceRequireObjectCache cache = (EnhanceRequireObjectCache)inst3.getSkyWalkingDynamicField();
+        EnhanceRequireObjectCache cache = (EnhanceRequireObjectCache) inst3.getSkyWalkingDynamicField();
         Assert.assertNotNull(cache);
 
         Object obj = new Object();
         Method m = obj.getClass().getMethods()[0];
         cache.addPathMapping(m, "#toString");
 
-        Assert.assertEquals("the two value should be equal", cache.findPathMapping(m), "/test3#toString");
+        Assert.assertEquals("the two value should be equal", cache.findPathMapping(m), "/test3/#toString");
     }
 
     @RequestMapping(value = "/test1")

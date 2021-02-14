@@ -16,20 +16,20 @@
  *
  */
 
-
 package org.apache.skywalking.apm.plugin.spring.mvc.v4.define;
 
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.matcher.ElementMatcher;
+import org.apache.skywalking.apm.agent.core.plugin.interceptor.ConstructorInterceptPoint;
+import org.apache.skywalking.apm.agent.core.plugin.interceptor.DeclaredInstanceMethodsInterceptPoint;
 import org.apache.skywalking.apm.agent.core.plugin.interceptor.InstanceMethodsInterceptPoint;
 import org.apache.skywalking.apm.agent.core.plugin.match.ClassAnnotationMatch;
 import org.apache.skywalking.apm.agent.core.plugin.match.ClassMatch;
 import org.apache.skywalking.apm.plugin.spring.mvc.commons.Constants;
-import org.apache.skywalking.apm.agent.core.plugin.interceptor.ConstructorInterceptPoint;
 
 import static net.bytebuddy.matcher.ElementMatchers.any;
-import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
 import static net.bytebuddy.matcher.ElementMatchers.named;
+import static org.apache.skywalking.apm.agent.core.plugin.match.MethodInheritanceAnnotationMatcher.byMethodInheritanceAnnotationMatcher;
 
 /**
  * {@link ControllerInstrumentation} enhance all constructor and method annotated with
@@ -39,16 +39,14 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
  * <code>ControllerConstructorInterceptor</code> set the controller base path to
  * dynamic field before execute constructor.
  *
- * <code>org.apache.skywalking.apm.plugin.spring.mvc.v4.RequestMappingMethodInterceptor</code> get the request path from
- * dynamic field first, if not found, <code>RequestMappingMethodInterceptor</code> generate request path  that
+ * <code>org.apache.skywalking.apm.plugin.spring.mvc.commons.interceptor.RequestMappingMethodInterceptor</code> get the request path
+ * from dynamic field first, if not found, <code>RequestMappingMethodInterceptor</code> generate request path  that
  * combine the path value of current annotation on current method and the base path and set the new path to the dynamic
  * filed
- *
- * @author zhangxin
  */
 public abstract class AbstractControllerInstrumentation extends AbstractSpring4Instrumentation {
     @Override
-    protected ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
+    public ConstructorInterceptPoint[] getConstructorsInterceptPoints() {
         return new ConstructorInterceptPoint[] {
             new ConstructorInterceptPoint() {
                 @Override
@@ -65,12 +63,12 @@ public abstract class AbstractControllerInstrumentation extends AbstractSpring4I
     }
 
     @Override
-    protected InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
+    public InstanceMethodsInterceptPoint[] getInstanceMethodsInterceptPoints() {
         return new InstanceMethodsInterceptPoint[] {
-            new InstanceMethodsInterceptPoint() {
+            new DeclaredInstanceMethodsInterceptPoint() {
                 @Override
                 public ElementMatcher<MethodDescription> getMethodsMatcher() {
-                    return isAnnotatedWith(named("org.springframework.web.bind.annotation.RequestMapping"));
+                    return byMethodInheritanceAnnotationMatcher(named("org.springframework.web.bind.annotation.RequestMapping"));
                 }
 
                 @Override
@@ -83,14 +81,14 @@ public abstract class AbstractControllerInstrumentation extends AbstractSpring4I
                     return false;
                 }
             },
-            new InstanceMethodsInterceptPoint() {
+            new DeclaredInstanceMethodsInterceptPoint() {
                 @Override
                 public ElementMatcher<MethodDescription> getMethodsMatcher() {
-                    return isAnnotatedWith(named("org.springframework.web.bind.annotation.GetMapping"))
-                        .or(isAnnotatedWith(named("org.springframework.web.bind.annotation.PostMapping")))
-                        .or(isAnnotatedWith(named("org.springframework.web.bind.annotation.PutMapping")))
-                        .or(isAnnotatedWith(named("org.springframework.web.bind.annotation.DeleteMapping")))
-                        .or(isAnnotatedWith(named("org.springframework.web.bind.annotation.PatchMapping")));
+                    return byMethodInheritanceAnnotationMatcher(named("org.springframework.web.bind.annotation.GetMapping"))
+                        .or(byMethodInheritanceAnnotationMatcher(named("org.springframework.web.bind.annotation.PostMapping")))
+                        .or(byMethodInheritanceAnnotationMatcher(named("org.springframework.web.bind.annotation.PutMapping")))
+                        .or(byMethodInheritanceAnnotationMatcher(named("org.springframework.web.bind.annotation.DeleteMapping")))
+                        .or(byMethodInheritanceAnnotationMatcher(named("org.springframework.web.bind.annotation.PatchMapping")));
                 }
 
                 @Override

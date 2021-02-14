@@ -16,13 +16,9 @@
  *
  */
 
-
 package org.apache.skywalking.apm.agent.core.jvm.cpu;
 
-/**
- * @author wusheng
- */
-public class NoSupportedCPUAccessor extends CPUMetricAccessor {
+public class NoSupportedCPUAccessor extends CPUMetricsAccessor {
     public NoSupportedCPUAccessor(int cpuCoreNum) {
         super(cpuCoreNum);
     }
