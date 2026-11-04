@@ -1,0 +1,108 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.skywalking.oap.analyzer.genai.listener;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.skywalking.oap.analyzer.genai.module.GenAIAnalyzerModule;
+import org.apache.skywalking.oap.analyzer.genai.service.IGenAIMeterAnalyzerService;
+import org.apache.skywalking.oap.server.core.CoreModule;
+import org.apache.skywalking.oap.server.core.trace.OTLPSpanReader;
+import org.apache.skywalking.oap.server.core.trace.SpanListener;
+import org.apache.skywalking.oap.server.core.trace.SpanListenerResult;
+import org.apache.skywalking.oap.server.core.source.GenAIMetrics;
+import org.apache.skywalking.oap.server.core.source.Source;
+import org.apache.skywalking.oap.server.core.source.SourceReceiver;
+import org.apache.skywalking.oap.server.core.zipkin.source.ZipkinSpan;
+import org.apache.skywalking.oap.server.library.module.ModuleManager;
+import org.apache.skywalking.oap.server.library.util.genai.GenAISemanticAttributes;
+
+/**
+ * {@link SpanListener} that extracts GenAI metrics from spans after phase 1.
+ *
+ * <p>Implements {@link #onZipkinSpan} (phase 2) so it works for all trace sources
+ * (OTLP converted to Zipkin, Zipkin HTTP, Kafka), and {@link #onNativeOTLPSpan} for OTLP
+ * spans stored natively, which never become Zipkin spans. Each span reaches exactly one
+ * of the two. Replicates the logic previously hardcoded in {@code SpanForward.processGenAILogic()}.
+ *
+ * <p>Sources (GenAI metrics) are emitted directly to {@link SourceReceiver} — not
+ * returned in the result. The result only carries additional tags (estimated cost).
+ */
+@Slf4j
+public class GenAISpanListener implements SpanListener {
+    private IGenAIMeterAnalyzerService analyzerService;
+    private SourceReceiver sourceReceiver;
+
+    @Override
+    public String[] requiredModules() {
+        return new String[] {GenAIAnalyzerModule.NAME, CoreModule.NAME};
+    }
+
+    @Override
+    public void init(final ModuleManager moduleManager) {
+        analyzerService = moduleManager.find(GenAIAnalyzerModule.NAME)
+                                       .provider()
+                                       .getService(IGenAIMeterAnalyzerService.class);
+        sourceReceiver = moduleManager.find(CoreModule.NAME)
+                                      .provider()
+                                      .getService(SourceReceiver.class);
+    }
+
+    @Override
+    public SpanListenerResult onZipkinSpan(final ZipkinSpan span) {
+        return emit(analyzerService.extractMetricsFromZipkinSpan(span));
+    }
+
+    @Override
+    public SpanListenerResult onNativeOTLPSpan(final OTLPSpanReader span,
+                                               final String serviceName,
+                                               final Map<String, String> resourceAttributes,
+                                               final String scopeName,
+                                               final String scopeVersion) {
+        return emit(analyzerService.extractMetricsFromOTLPSpan(span));
+    }
+
+    private SpanListenerResult emit(final GenAIMetrics metrics) {
+        if (metrics == null) {
+            return SpanListenerResult.CONTINUE;
+        }
+
+        // Emit GenAI sources directly
+        for (final Source source : analyzerService.transferToSources(metrics)) {
+            sourceReceiver.receive(source);
+        }
+
+        // Return additional tags (estimated cost) for the caller to merge
+        Map<String, String> additionalTags = new HashMap<>();
+        if (metrics.getTotalEstimatedCost() > 0) {
+            final BigDecimal calculatedCost = BigDecimal.valueOf(metrics.getTotalEstimatedCost())
+                .divide(new BigDecimal("1000000"), 10, RoundingMode.HALF_UP);
+            additionalTags.put(
+                GenAISemanticAttributes.ESTIMATED_COST,
+                calculatedCost.stripTrailingZeros().toPlainString());
+        }
+
+        return SpanListenerResult.builder()
+                                .shouldPersist(true)
+                                .additionalTags(additionalTags)
+                                .build();
+    }
+}

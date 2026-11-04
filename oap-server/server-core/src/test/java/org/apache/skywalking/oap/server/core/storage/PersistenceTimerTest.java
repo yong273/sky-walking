@@ -1,0 +1,190 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package org.apache.skywalking.oap.server.core.storage;
+
+import lombok.Data;
+import org.apache.skywalking.oap.server.core.CoreModuleConfig;
+import org.apache.skywalking.oap.server.core.analysis.worker.MetricsPersistentWorker;
+import org.apache.skywalking.oap.server.core.analysis.worker.MetricsStreamProcessor;
+import org.apache.skywalking.oap.server.core.analysis.worker.TopNStreamProcessor;
+import org.apache.skywalking.oap.server.core.analysis.worker.TopNWorker;
+import org.apache.skywalking.oap.server.library.client.request.InsertRequest;
+import org.apache.skywalking.oap.server.library.client.request.PrepareRequest;
+import org.apache.skywalking.oap.server.library.module.ModuleManager;
+import org.apache.skywalking.oap.server.library.module.ModuleProviderHolder;
+import org.apache.skywalking.oap.server.library.module.ModuleServiceHolder;
+import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
+import org.apache.skywalking.oap.server.telemetry.none.MetricsCreatorNoop;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
+public class PersistenceTimerTest {
+
+    @Test
+    public void testExtractDataAndSave() throws Exception {
+        Set<PrepareRequest> result = new HashSet<>();
+        int count = 101;
+        int workCount = 10;
+        CoreModuleConfig moduleConfig = new CoreModuleConfig();
+        moduleConfig.setPersistentPeriod(Integer.MAX_VALUE);
+        IBatchDAO iBatchDAO = new IBatchDAO() {
+            @Override
+            public void insert(InsertRequest insertRequest) {
+
+            }
+
+            @Override
+            public CompletableFuture<Void> flush(final List<PrepareRequest> prepareRequests) {
+                synchronized (result) {
+                    result.addAll(prepareRequests);
+                }
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+        for (int i = 0; i < workCount; i++) {
+            MetricsStreamProcessor.getInstance().getPersistentWorkers().add(genWorkers(i, count));
+            TopNStreamProcessor.getInstance().getPersistentWorkers().add(genTopNWorkers(i, count));
+        }
+        ModuleManager moduleManager = mock(ModuleManager.class);
+        ModuleServiceHolder moduleServiceHolder = mock(ModuleServiceHolder.class);
+        doReturn((ModuleProviderHolder) () -> moduleServiceHolder).when(moduleManager).find(anyString());
+        doReturn(new MetricsCreatorNoop()).when(moduleServiceHolder).getService(MetricsCreator.class);
+        doReturn(iBatchDAO).when(moduleServiceHolder).getService(IBatchDAO.class);
+        PersistenceTimer.INSTANCE.isStarted = true;
+
+        PersistenceTimer.INSTANCE.start(moduleManager, moduleConfig);
+        Method method = PersistenceTimer.class.getDeclaredMethod("extractDataAndSave", IBatchDAO.class);
+        method.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        CompletableFuture<Void> f = (CompletableFuture<Void>) method.invoke(PersistenceTimer.INSTANCE, iBatchDAO);
+        f.join();
+
+        Assertions.assertEquals(count * workCount * 2, result.size());
+    }
+
+    /**
+     * A round completes only when the storage has answered for every request of it, and the storage is told the
+     * round is queued before that wait begins: the persistence session cache is filled by the storage's answer,
+     * and the next round, scheduled from the end of this one, must find it filled.
+     */
+    @Test
+    public void aRoundWaitsForTheStorageToAnswerAfterTellingItTheRoundIsQueued() throws Exception {
+        final CompletableFuture<Void> answer = new CompletableFuture<>();
+        final List<String> order = new CopyOnWriteArrayList<>();
+        final IBatchDAO dao = new IBatchDAO() {
+            @Override
+            public void insert(final InsertRequest insertRequest) {
+            }
+
+            @Override
+            public CompletableFuture<Void> flush(final List<PrepareRequest> prepareRequests) {
+                order.add("flush");
+                return answer;
+            }
+
+            @Override
+            public void endOfFlush() {
+                order.add("endOfFlush");
+            }
+        };
+        final MetricsPersistentWorker worker = genWorkers(0, 1);
+        MetricsStreamProcessor.getInstance().getPersistentWorkers().add(worker);
+        try {
+            ModuleManager moduleManager = mock(ModuleManager.class);
+            ModuleServiceHolder moduleServiceHolder = mock(ModuleServiceHolder.class);
+            doReturn((ModuleProviderHolder) () -> moduleServiceHolder).when(moduleManager).find(anyString());
+            doReturn(new MetricsCreatorNoop()).when(moduleServiceHolder).getService(MetricsCreator.class);
+            doReturn(dao).when(moduleServiceHolder).getService(IBatchDAO.class);
+            CoreModuleConfig moduleConfig = new CoreModuleConfig();
+            moduleConfig.setPersistentPeriod(Integer.MAX_VALUE);
+            PersistenceTimer.INSTANCE.isStarted = true;
+            PersistenceTimer.INSTANCE.start(moduleManager, moduleConfig);
+
+            Method method = PersistenceTimer.class.getDeclaredMethod("extractDataAndSave", IBatchDAO.class);
+            method.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            CompletableFuture<Void> round = (CompletableFuture<Void>) method.invoke(PersistenceTimer.INSTANCE, dao);
+
+            // every request is queued, and the storage told so, while the answer is still to come
+            final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+            while (!order.contains("endOfFlush") && System.nanoTime() < deadline) {
+                Thread.sleep(10);
+            }
+            Assertions.assertTrue(order.contains("flush"), order.toString());
+            Assertions.assertEquals(order.size() - 1, order.indexOf("endOfFlush"), "endOfFlush follows every flush: " + order);
+            Assertions.assertFalse(round.isDone(), "the round ended before the storage answered");
+
+            answer.complete(null);
+            round.get(10, TimeUnit.SECONDS);
+        } finally {
+            MetricsStreamProcessor.getInstance().getPersistentWorkers().remove(worker);
+        }
+    }
+
+    private MetricsPersistentWorker genWorkers(int num, int count) {
+        MetricsPersistentWorker persistenceWorker = mock(MetricsPersistentWorker.class);
+        doAnswer(invocation -> {
+            List<MockStorageData> results = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                results.add(new MockStorageData(num + " " + UUID.randomUUID()));
+            }
+            return results;
+        }).when(persistenceWorker).buildBatchRequests();
+        return persistenceWorker;
+    }
+
+    private TopNWorker genTopNWorkers(int num, int count) {
+        TopNWorker persistenceWorker = mock(TopNWorker.class);
+        doAnswer(invocation -> {
+            List<MockStorageData> results = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                results.add(new MockStorageData(num + " " + UUID.randomUUID()));
+            }
+            return results;
+        }).when(persistenceWorker).buildBatchRequests();
+        return persistenceWorker;
+    }
+
+    @Data
+    static class MockStorageData implements StorageData {
+        private final String id;
+
+        @Override
+        public StorageID id() {
+            return new StorageID().append("ID", id);
+        }
+
+    }
+
+}

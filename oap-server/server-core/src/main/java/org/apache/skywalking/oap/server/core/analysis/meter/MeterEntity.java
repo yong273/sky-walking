@@ -1,0 +1,319 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package org.apache.skywalking.oap.server.core.analysis.meter;
+
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import java.util.Map;
+import org.apache.skywalking.oap.server.core.UnexpectedException;
+import org.apache.skywalking.oap.server.core.analysis.IDManager;
+import org.apache.skywalking.oap.server.core.analysis.Layer;
+import org.apache.skywalking.oap.server.core.config.NamingControl;
+import org.apache.skywalking.oap.server.core.source.DetectPoint;
+
+/**
+ * MeterEntity represents the entity in the meter system.
+ */
+@EqualsAndHashCode
+@ToString
+@Getter
+public class MeterEntity {
+    private static NamingControl NAMING_CONTROL;
+
+    private ScopeType scopeType;
+    private String serviceName;
+    private String instanceName;
+    private Map<String, String> instanceProperties;
+    private String endpointName;
+    private String processName;
+    private String sourceServiceName;
+    private String destServiceName;
+    private String sourceInstanceName;
+    private String destInstanceName;
+    private String sourceProcessId;
+    private String destProcessId;
+    private DetectPoint detectPoint;
+    private Layer layer;
+    /**
+     * The layer of the destination side of a relation, when the two ends do not share one. Null on every
+     * single-layer entity, where {@link #layer} answers for both ends.
+     */
+    private Layer destLayer;
+    private int componentId;
+    @Setter
+    private String attr0;
+    @Setter
+    private String attr1;
+    @Setter
+    private String attr2;
+    @Setter
+    private String attr3;
+    @Setter
+    private String attr4;
+    @Setter
+    private String attr5;
+
+    private MeterEntity() {
+
+    }
+
+    public String id() {
+        switch (scopeType) {
+            case SERVICE:
+                return IDManager.ServiceID.buildId(serviceName, normal());
+            case SERVICE_INSTANCE:
+                return IDManager.ServiceInstanceID.buildId(
+                    IDManager.ServiceID.buildId(serviceName, normal()), instanceName);
+            case ENDPOINT:
+                return IDManager.EndpointID.buildId(IDManager.ServiceID.buildId(serviceName, normal()), endpointName);
+            case PROCESS:
+                return IDManager.ProcessID.buildId(
+                    IDManager.ServiceInstanceID.buildId(IDManager.ServiceID.buildId(serviceName, normal()), instanceName),
+                    processName);
+            case SERVICE_RELATION:
+                return IDManager.ServiceID.buildRelationId(new IDManager.ServiceID.ServiceRelationDefine(
+                    sourceServiceId(),
+                    destServiceId()
+                ));
+            case PROCESS_RELATION:
+                return IDManager.ProcessID.buildRelationId(new IDManager.ProcessID.ProcessRelationDefine(
+                    sourceProcessId,
+                    destProcessId
+                ));
+            case SERVICE_INSTANCE_RELATION:
+                return IDManager.ServiceInstanceID.buildRelationId(new IDManager.ServiceInstanceID.ServiceInstanceRelationDefine(
+                    sourceServiceInstanceId(),
+                    destServiceInstanceId()
+                ));
+            default:
+                throw new UnexpectedException("Unexpected scope type of entity " + this.toString());
+        }
+    }
+
+    public String serviceId() {
+        return IDManager.ServiceID.buildId(serviceName, normal());
+    }
+
+    public String serviceInstanceId() {
+        return IDManager.ServiceInstanceID.buildId(serviceId(), instanceName);
+    }
+
+    public String sourceServiceId() {
+        return IDManager.ServiceID.buildId(sourceServiceName, sourceNormal());
+    }
+
+    public String destServiceId() {
+        return IDManager.ServiceID.buildId(destServiceName, destNormal());
+    }
+
+    // MAL may create conjectured services on virtual layers, so nodes and relation endpoints
+    // must use the same normal flag when building their IDs.
+    private boolean normal() {
+        if (destLayer == null) {
+            return isNormal(layer);
+        }
+        // A two-layer relation's own metric belongs to the callee for a SERVER detect point and to the caller
+        // for a CLIENT one, which is the side EntityTrafficGenerator sets serviceName to.
+        return detectPoint == DetectPoint.SERVER ? destLayer.isNormal() : layer.isNormal();
+    }
+
+    private boolean sourceNormal() {
+        return destLayer == null ? normal() : layer.isNormal();
+    }
+
+    /**
+     * A relation may cross layers: a normal service calling a conjectured database has a normal source and a
+     * VIRTUAL_DATABASE destination, and each side's id must carry its own flag, the way
+     * {@link org.apache.skywalking.oap.server.core.query.input.Entity#buildId()} builds them from {@code normal}
+     * and {@code destNormal} on the query side. A two-layer relation takes each layer's own flag, {@code UNDEFINED}
+     * included, which is how the agent path's {@code ServiceRelation} source builds the same ids: {@code User} is
+     * {@code UNDEFINED} and non-normal there, and {@code ServiceTopologyBuilder} looks it up under that id.
+     */
+    private boolean destNormal() {
+        return destLayer == null ? normal() : destLayer.isNormal();
+    }
+
+    /**
+     * @param layer the layer, or null
+     * @return the {@code normal} flag a single-layer entity's id carries: MAL's entities have no layer, or an
+     * {@code UNDEFINED} one, and are normal services; a virtual layer is conjectured
+     */
+    public static boolean isNormal(final Layer layer) {
+        return layer == null || layer == Layer.UNDEFINED || layer.isNormal();
+    }
+
+    public String sourceServiceInstanceId() {
+        return IDManager.ServiceInstanceID.buildId(sourceServiceId(), sourceInstanceName);
+    }
+
+    public String destServiceInstanceId() {
+        return IDManager.ServiceInstanceID.buildId(destServiceId(), destInstanceName);
+    }
+
+    public static void setNamingControl(final NamingControl namingControl) {
+        NAMING_CONTROL = namingControl;
+    }
+
+    public void setServiceName(final String serviceName) {
+        this.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
+    }
+
+    /**
+     * Create a service level meter entity.
+     */
+    public static MeterEntity newService(String serviceName, Layer layer) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.SERVICE;
+        meterEntity.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
+        meterEntity.layer = layer;
+        return meterEntity;
+    }
+
+    /**
+     * Create a service instance level meter entity.
+     */
+    public static MeterEntity newServiceInstance(String serviceName, String serviceInstance, Layer layer, Map<String, String> properties) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.SERVICE_INSTANCE;
+        meterEntity.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
+        meterEntity.instanceName = NAMING_CONTROL.formatInstanceName(serviceInstance);
+        meterEntity.instanceProperties = properties;
+        meterEntity.layer = layer;
+        return meterEntity;
+    }
+
+    /**
+     * Create an endpoint level meter entity.
+     */
+    public static MeterEntity newEndpoint(String serviceName, String endpointName, Layer layer) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.ENDPOINT;
+        meterEntity.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
+        meterEntity.endpointName = NAMING_CONTROL.formatEndpointName(serviceName, endpointName);
+        meterEntity.layer = layer;
+        return meterEntity;
+    }
+
+    public static MeterEntity newProcess(String serviceName, String instanceName, String processName, String layerName) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.PROCESS;
+        meterEntity.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
+        meterEntity.instanceName = NAMING_CONTROL.formatInstanceName(instanceName);
+        meterEntity.processName = processName;
+        meterEntity.layer = Layer.nameOf(layerName);
+        return meterEntity;
+    }
+
+    public static MeterEntity newServiceRelation(String sourceServiceName,
+                                                 String destServiceName,
+                                                 DetectPoint detectPoint, Layer layer, int componentId) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.SERVICE_RELATION;
+        meterEntity.sourceServiceName = NAMING_CONTROL.formatServiceName(sourceServiceName);
+        meterEntity.destServiceName = NAMING_CONTROL.formatServiceName(destServiceName);
+        meterEntity.detectPoint = detectPoint;
+        meterEntity.layer = layer;
+        meterEntity.componentId = componentId;
+        return meterEntity;
+    }
+
+    /**
+     * Create a service-relation level meter entity whose two ends live in different layers, which is what a span
+     * from a normal service to a conjectured peer needs: the source keeps its own layer and the destination is
+     * registered, and its id built, in the peer's virtual layer.
+     */
+    public static MeterEntity newServiceRelation(String sourceServiceName,
+                                                 Layer sourceLayer,
+                                                 String destServiceName,
+                                                 Layer destLayer,
+                                                 DetectPoint detectPoint, int componentId) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.SERVICE_RELATION;
+        meterEntity.sourceServiceName = NAMING_CONTROL.formatServiceName(sourceServiceName);
+        meterEntity.destServiceName = NAMING_CONTROL.formatServiceName(destServiceName);
+        meterEntity.detectPoint = detectPoint;
+        meterEntity.layer = sourceLayer;
+        meterEntity.destLayer = destLayer;
+        meterEntity.componentId = componentId;
+        return meterEntity;
+    }
+
+    /**
+     * Create a service-instance-relation level meter entity. Both sides are identified by their
+     * service name + instance name; the relation id collides with agent-sourced instance relations
+     * by design (same {@link IDManager.ServiceInstanceID#buildRelationId} format), so MAL-defined and
+     * agent-defined instance topology merge.
+     */
+    public static MeterEntity newServiceInstanceRelation(String sourceServiceName,
+                                                         String sourceInstanceName,
+                                                         String destServiceName,
+                                                         String destInstanceName,
+                                                         DetectPoint detectPoint, Layer layer, int componentId) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.SERVICE_INSTANCE_RELATION;
+        meterEntity.sourceServiceName = NAMING_CONTROL.formatServiceName(sourceServiceName);
+        meterEntity.sourceInstanceName = NAMING_CONTROL.formatInstanceName(sourceInstanceName);
+        meterEntity.destServiceName = NAMING_CONTROL.formatServiceName(destServiceName);
+        meterEntity.destInstanceName = NAMING_CONTROL.formatInstanceName(destInstanceName);
+        meterEntity.detectPoint = detectPoint;
+        meterEntity.layer = layer;
+        meterEntity.componentId = componentId;
+        return meterEntity;
+    }
+
+    /**
+     * Create a service-instance-relation level meter entity whose two ends live in different layers. See
+     * {@link #newServiceRelation(String, Layer, String, Layer, DetectPoint, int)}.
+     */
+    public static MeterEntity newServiceInstanceRelation(String sourceServiceName,
+                                                         String sourceInstanceName,
+                                                         Layer sourceLayer,
+                                                         String destServiceName,
+                                                         String destInstanceName,
+                                                         Layer destLayer,
+                                                         DetectPoint detectPoint, int componentId) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.SERVICE_INSTANCE_RELATION;
+        meterEntity.sourceServiceName = NAMING_CONTROL.formatServiceName(sourceServiceName);
+        meterEntity.sourceInstanceName = NAMING_CONTROL.formatInstanceName(sourceInstanceName);
+        meterEntity.destServiceName = NAMING_CONTROL.formatServiceName(destServiceName);
+        meterEntity.destInstanceName = NAMING_CONTROL.formatInstanceName(destInstanceName);
+        meterEntity.detectPoint = detectPoint;
+        meterEntity.layer = sourceLayer;
+        meterEntity.destLayer = destLayer;
+        meterEntity.componentId = componentId;
+        return meterEntity;
+    }
+
+    public static MeterEntity newProcessRelation(String serviceName, String instanceName,
+                                                 String sourceProcessId, String destProcessId,
+                                                 int componentId, DetectPoint detectPoint) {
+        final MeterEntity meterEntity = new MeterEntity();
+        meterEntity.scopeType = ScopeType.PROCESS_RELATION;
+        meterEntity.serviceName = serviceName;
+        meterEntity.instanceName = instanceName;
+        meterEntity.sourceProcessId = sourceProcessId;
+        meterEntity.destProcessId = destProcessId;
+        meterEntity.componentId = componentId;
+        meterEntity.detectPoint = detectPoint;
+        return meterEntity;
+    }
+}

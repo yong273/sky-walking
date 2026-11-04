@@ -1,1 +1,0 @@
-spring-cloud-feign-1.x=org.apache.skywalking.apm.plugin.spring.cloud.netflix.feign.v11.define.NetflixFeignInstrumentation

@@ -1,0 +1,94 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.skywalking.oap.server.core.trace;
+
+import java.util.Collections;
+import java.util.Map;
+
+/**
+ * Read-only abstraction over an OTLP span, decoupled from the protobuf
+ * {@code io.opentelemetry.proto.trace.v1.Span} type so that {@code server-core}
+ * does not depend on {@code receiver-proto}.
+ *
+ * <p>Implementations in the OTLP receiver module wrap the real proto object.
+ */
+public interface OTLPSpanReader {
+    /**
+     * @return the trace id encoded as lowercase hex
+     */
+    default String traceId() {
+        return "";
+    }
+
+    /**
+     * @return the span id encoded as lowercase hex
+     */
+    default String spanId() {
+        return "";
+    }
+
+    /**
+     * @return the span name (e.g., "HTTP GET", "MXMetricPayload")
+     */
+    String spanName();
+
+    /**
+     * @return the span kind as the OTLP proto enum name
+     * (e.g., {@code "SPAN_KIND_CLIENT"}, {@code "SPAN_KIND_INTERNAL"}).
+     */
+    String spanKind();
+
+    /**
+     * @return start time in nanoseconds since epoch
+     */
+    long startTimeNanos();
+
+    /**
+     * @return end time in nanoseconds since epoch
+     */
+    long endTimeNanos();
+
+    /**
+     * Look up a span attribute by key.
+     *
+     * @return the attribute value as a string, or empty string if not found
+     */
+    String getAttribute(String key);
+
+    /**
+     * @return the parent span id encoded as lowercase hex, empty for a root span
+     */
+    default String parentSpanId() {
+        return "";
+    }
+
+    /**
+     * @return the status code as the OTLP proto enum name, {@code STATUS_CODE_UNSET}, {@code STATUS_CODE_OK} or
+     * {@code STATUS_CODE_ERROR}
+     */
+    default String statusCode() {
+        return "STATUS_CODE_UNSET";
+    }
+
+    /**
+     * @return every span attribute, values rendered as strings; the first occurrence of a duplicated key wins
+     */
+    default Map<String, String> attributes() {
+        return Collections.emptyMap();
+    }
+}

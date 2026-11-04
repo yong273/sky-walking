@@ -1,3 +1,0 @@
-toolkit-trace=org.apache.skywalking.apm.toolkit.activation.trace.ActiveSpanTagActivation
-toolkit-trace=org.apache.skywalking.apm.toolkit.activation.trace.TraceAnnotationActivation
-toolkit-trace=org.apache.skywalking.apm.toolkit.activation.trace.TraceContextActivation
